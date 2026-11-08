@@ -4,32 +4,44 @@ English | [繁體中文](README_tw.md)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**`agy-skill`** is a comprehensive, universal AI Agent Skill package for **Google Antigravity**—covering **Antigravity 2.0 Desktop App**, **`agy` CLI**, **Antigravity IDE**, **Python SDK**, and the **Customization System**. It is designed to be understood and used seamlessly by **Claude Code**, **OpenAI Codex**, **OpenCode**, **Cursor**, and **Antigravity** itself across **Windows, macOS, and Linux**.
+**`agy-skill`** is a comprehensive, universal AI Agent Skill package for **Google Antigravity**—covering **Antigravity 2.0 Desktop App**, **`agy` CLI**, **Antigravity IDE**, **Python SDK**, and the **Customization System**. It is designed to be understood and used seamlessly by **Claude Code**, **OpenAI Codex**, **OpenCode**, **Cursor**, **Pi**, and **Antigravity** itself across **Windows, macOS, and Linux**.
 
 ---
 
-## One-Click Installation via `npx` (Windows / macOS / Linux)
+## One-Click Installation (Windows / macOS / Linux)
 
-No manual cloning required. Run a single command on any OS with Node.js (`>=18`) to install `agy-skill` across your AI coding agents:
+### Option A: For Humans (`npx` One-Liner)
+
+Run a single command on any OS with Node.js (`>=18`).
+
+> **Note for npm v12+ (Node.js v25/v26+)**: Modern `npm` disables Git-hosted packages by default (`npm error code EALLOWGIT`). Always include `--allow-git=all` when running via `npx github:...`:
 
 ```bash
 # 1. One-click Global Install (Antigravity, Claude Code, OpenAI Codex, OpenCode)
-npx github:qwe840608/agy-skill
+npx --yes --allow-git=all github:qwe840608/agy-skill
 
 # 2. Install into the current project workspace (.agents/skills/agy-skill)
-npx github:qwe840608/agy-skill install --workspace
+npx --yes --allow-git=all github:qwe840608/agy-skill install --workspace
 
 # 3. Install only for specific agents (comma-separated: antigravity,claude,codex,opencode)
-npx github:qwe840608/agy-skill install --agent antigravity,claude
+npx --yes --allow-git=all github:qwe840608/agy-skill install --agent antigravity,claude
 
 # 4. Check local agy CLI version & skill installation status across all agents
-npx github:qwe840608/agy-skill doctor
+npx --yes --allow-git=all github:qwe840608/agy-skill doctor
 
 # 5. Uninstall agy-skill
-npx github:qwe840608/agy-skill uninstall
+npx --yes --allow-git=all github:qwe840608/agy-skill uninstall
 ```
 
-By default, `npx github:qwe840608/agy-skill` installs the skill into:
+### Option B: For AI Agents (Zero-Setup Prompt)
+
+Paste this into **Claude Code**, **Codex**, **OpenCode**, or **Antigravity**:
+
+```text
+Run `npx --yes --allow-git=all github:qwe840608/agy-skill` to install the universal Google Antigravity skill (`agy-skill`) across all global agent skill directories, then run `npx --yes --allow-git=all github:qwe840608/agy-skill doctor` to verify the installation.
+```
+
+By default, `agy-skill` is installed into:
 1. **Antigravity (App 2.0 / `agy` CLI / IDE)**: `~/.gemini/config/skills/agy-skill`
 2. **Claude Code**: `~/.claude/skills/agy-skill`
 3. **OpenAI Codex CLI**: `~/.codex/skills/agy-skill`
@@ -41,8 +53,8 @@ By default, `npx github:qwe840608/agy-skill` installs the skill into:
 
 | Domain | Capabilities Provided by `agy-skill` |
 | :--- | :--- |
-| **Cross-Agent `agy` CLI Orchestration** | Full coverage of `agy -p` (`--print`), `--output-format json\|stream-json`, `--json-schema` structured output, `--mode (plan\|accept-edits\|auto)`, `--effort (low..max)`, `--sandbox`, and `-c` / `--conversation`, allowing Claude/Codex/OpenCode to delegate tasks to `agy` as a subagent. |
-| **CLI Subcommands & ACP Server** | Complete reference for `agy acp` (Agent Client Protocol stdio JSON-RPC server), `agy mcp`, `agy plugin` (including `import [claude\|gemini]`, `category` validation, symlink support), `agy models`, `agy agents`, `agy remote-control`, and `agy mic-serve`. |
+| **Cross-Agent `agy` CLI Orchestration** | Full coverage of `agy -p` (`--print`), **Lead vs. Brain** orchestration modes, **5 Specialist Personas** (`ask`, `staffer`, `researcher`, `reviewer`, `implementer`), native tool routing (`generate_image`), `--output-format json\|stream-json`, `--json-schema`, and the **5 Critical Guardrails** (`</dev/null` stdin closure, `--add-dir` attachment, permission-freeze prevention, host-sandbox escape, and worktree isolation). |
+| **CLI Subcommands & ACP Server** | Complete reference for `agy acp` (Agent Client Protocol stdio JSON-RPC server & session lifecycle), `agy mcp`, `agy plugin` (including `import [claude\|gemini]`, `category` validation, symlink support), `agy models`, `agy agents`, `agy remote-control`, and `agy mic-serve`. |
 | **Antigravity 2.0 App & IDE** | Covers Antigravity 2.0 Desktop App (Sidebar, Chat Canvas `/` slash commands & `@` mentions, HTML Auxiliary Pane, global & project-level sandbox/permission policies) and Antigravity IDE (Tab/Supercomplete, `Ctrl+I`/`Cmd+I`, Code Lenses). |
 | **5 Customization Pillars** | Full specification of `.agents/` & `~/.gemini/config/` 5-tier loading precedence, **Rules** (24KB per-file cap / 20,000-token budget demotion), **Skills** (`skills.json`), **Plugins** (`plugin.json`, Language Server `GetAllPlugins` RPC & `customization://<dir>` links), **Hooks** (`hooks.json` 6 lifecycle events, camelCase stdin/stdout contracts, `PLUGIN_ROOT`/`PLUGIN_DATA`), and **MCP** (Stdio & Streamable HTTP). |
 | **Sidecars, Scheduled Automations & Generative UI** | Complete guide for `~/.gemini/config/sidecars/<id>/sidecar.json` (`builtin: "schedule"`, `CRON_TZ`, `agentapi new-conversation`, least-privilege `access_grants`), UI Plugin Panes (`sidecar://`), and inline Generative UI (`<agent-embed>` & gstatic Tailwind rules). |
@@ -58,14 +70,14 @@ agy-skill/
 ├── package.json                       # Cross-platform npm package manifest & CLI bin registration
 ├── bin/
 │   └── cli.mjs                        # Cross-platform one-click installer, doctor & auto-sync CLI
-├── SKILL.md                           # Core skill entrypoint (Progressive Disclosure router & quick commands)
+├── SKILL.md                           # Core skill entrypoint (Decision tree, 5 Golden Rules & progressive router)
 ├── AGENTS.md                          # Mandatory maintenance rules for AI agents (auto-update & GitHub sync)
 ├── README.md                          # Primary English documentation
 ├── README_tw.md                       # Traditional Chinese (繁體中文) documentation
 ├── LICENSE                            # MIT License
 ├── version-state.json                 # Auto-tracked agy version, CLI help hashes, and builtin skills SHA-256 state
 └── references/
-    ├── cli-and-headless.md            # agy CLI flags, headless JSON/NDJSON streaming, ACP Server guide
+    ├── cli-and-headless.md            # agy CLI flags, Lead/Brain orchestration, 5 Personas, ACP Server & troubleshooting
     ├── app-and-ide.md                 # Antigravity 2.0 Desktop App & Antigravity IDE operations and permissions
     ├── customizations.md              # 5 Customization pillars, priority order, Rules budgets, skills.json
     ├── hooks-plugins-mcp.md           # hooks.json 6 event contracts, plugin.json, LS RPC, mcp_config.json

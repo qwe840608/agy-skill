@@ -1,6 +1,6 @@
 # Antigravity Customization System & Cross-Agent Compatibility
 
-This guide covers how Antigravity discovers, prioritizes, and loads customizations (**Rules**, **Skills**, **Plugins**, **Hooks**, **MCP Servers**), how `skills.json` and `plugins.json` work, how to integrate with `@rmyndharis/antigravity-skills`, and how to share skills across **Antigravity**, **Claude Code**, **Codex**, and **OpenCode**.
+This guide covers how Antigravity discovers, prioritizes, and loads customizations (**Rules**, **Skills**, **Plugins**, **Hooks**, **MCP Servers**), how `skills.json` and `plugins.json` work, how to integrate with community skill vaults, and how to share skills across **Antigravity**, **Claude Code**, **Codex**, and **OpenCode**.
 
 ---
 
@@ -26,7 +26,7 @@ This guide covers how Antigravity discovers, prioritizes, and loads customizatio
    - `GEMINI.md`, `AGENTS.md`, and `.agents/rules/*.md` in any directory between the edited/opened file and the repository root.
 3. **Global Configuration (Machine-Local)**:
    - `~/.gemini/config/` (read by Antigravity 2.0 App, `agy` CLI, and Antigravity IDE).
-   - Legacy IDE-only global skills path: `~/.gemini/antigravity/skills/` (only read by standalone IDE; prefer `~/.gemini/config/skills/`).
+   - **Common Third-Party Installer Pitfall (`~/.gemini/antigravity/skills/`)**: Some third-party installers (such as `npx antigravity-awesome-skills`) default to `~/.gemini/antigravity/skills/`, which is a legacy path read **only** by the standalone Antigravity IDE—neither Antigravity 2.0 App nor `agy` CLI reads it! Always point installers to `~/.gemini/config/skills/` (global) or `.agents/skills/` (workspace).
 
 ### 5-Tier Loading Precedence (Highest to Lowest)
 When two customizations share the same name, the higher-priority one wins:
@@ -42,7 +42,7 @@ When two customizations share the same name, the higher-priority one wins:
 
 - **Progressive Disclosure**:
   - For **Skills**, only YAML frontmatter (`name` and `description`) is injected at session start. The body of `SKILL.md` and files in `references/` are loaded on demand only when activated.
-  - Keep `SKILL.md` concise and place bulky documentation in `references/`, helper scripts in `scripts/`, templates in `resources/`, and examples in `examples/`.
+  - Keep `SKILL.md` concise and place bulky documentation in `references/`, helper scripts in `scripts/` or `bin/`, templates in `resources/`, and examples in `examples/`.
 - **Deduplication**:
   - Rules and skills are deduplicated by resolved real file path; a file is never injected twice in the same turn.
 - **Rules Size Limits & Token Budget**:
@@ -51,7 +51,7 @@ When two customizations share the same name, the higher-priority one wins:
 
 ---
 
-## 4. Authoring Skills (`SKILL.md`)
+## 4. Authoring Skills (`SKILL.md`) Best Practices
 
 ### Required Format
 ```markdown
@@ -77,11 +77,12 @@ description: >-
 - **Optional Frontmatter Fields**:
   - `disable-slash-command: true`: Prevents the skill from appearing as a user-invokable `/<name>` slash command while keeping it available to the agent.
   - `metadata: { icon: "..." }`: UI icon metadata (e.g., `icon: schedule`).
-- **Authoring Best Practices** (incorporating `@rmyndharis/antigravity-skills` strict validation standards):
-  - Never start `description` with `"You are..."` or `"PROACTIVELY..."`. State clear activation triggers.
-  - Avoid single-vendor syntax that breaks in other harnesses (such as hardcoded `$ARGUMENTS` macros) when writing portable skills.
-  - Include a **Safety** section when a skill runs destructive terminal or infrastructure commands.
-  - Use relative links (`[cli-and-headless.md](references/cli-and-headless.md)`) for all helper files.
+- **Golden Authoring Rules**:
+  1. **Focused Scope & Clear Triggers**: Never start `description` with `"You are..."` or `"PROACTIVELY..."`. Write third-person descriptions with exact domain keywords and explicit `"Use this skill when"` / `"Do not use this skill when"` boundaries.
+  2. **Include Decision Trees**: For complex workflows, include a markdown table or decision tree at the top of `SKILL.md` so the agent routes to the right command or reference file immediately.
+  3. **Treat Helper Scripts as Black Boxes**: Instruct the agent to invoke helper CLIs/scripts directly (or run `--help`) rather than reading the script's source code into the context window.
+  4. **Local State Hygiene (`.git/info/exclude`)**: If a skill or companion tool creates local scratch/state directories inside a user repository, exclude them via `.git/info/exclude` rather than modifying the project's tracked `.gitignore`.
+  5. **Portable Syntax**: Avoid single-vendor macros (such as hardcoded `$ARGUMENTS` or harness-locked tool names without fallback instructions) so the skill works identically across Antigravity, Claude Code, Codex, and OpenCode.
 
 ---
 
@@ -111,34 +112,29 @@ Use `.agents/skills.json` or `.agents/plugins.json` (or in `~/.gemini/config/`) 
 ```
 
 - **Path Resolution**:
-  - `/...` ( or `C:\...` on Windows): Absolute path.
+  - `/...` (or `C:\...` on Windows): Absolute path.
   - `~/...`: User home directory.
   - Relative path (`tools/agents/skills`): Resolved against the directory containing `.agents/`, falling back to the repository root.
 
 ---
 
-## 6. Integrating with `@rmyndharis/antigravity-skills` Vault
+## 6. Using Community Skill Vaults Safely
 
-The community repository [`rmyndharis/antigravity-skills`](https://github.com/rmyndharis/antigravity-skills) provides 300+ domain-specific workflows via an npm CLI.
+When installing domain skills from community collections (such as `@rmyndharis/antigravity-skills` or `antigravity-awesome-skills`), always install **strategically** (`install <skill>` or `--bundle <bundle>`, never `--all`) to avoid bloating session-start metadata tokens:
 
-- **Recommended Commands for `@rmyndharis/antigravity-skills`**:
-  ```bash
-  # Search catalog first (do NOT use --all, which bloats token metadata)
-  npx @rmyndharis/antigravity-skills search <query>
+```bash
+# Search @rmyndharis/antigravity-skills catalog first
+npx @rmyndharis/antigravity-skills search <query>
 
-  # Install into current workspace's canonical .agents/skills directory
-  AG_SKILLS_DIR=.agents/skills npx @rmyndharis/antigravity-skills install <skill-name>
+# Install into current workspace's canonical .agents/skills directory
+AG_SKILLS_DIR=.agents/skills npx @rmyndharis/antigravity-skills install <skill-name>
 
-  # Install into global Antigravity config directory (~/.gemini/config/skills)
-  npx @rmyndharis/antigravity-skills install <skill-name> --global
+# Install into global Antigravity config directory (~/.gemini/config/skills)
+npx @rmyndharis/antigravity-skills install <skill-name> --global
 
-  # Install curated bundle (core-dev, security-core, k8s-core, data-core, ai-core, ops-core)
-  AG_SKILLS_DIR=.agents/skills npx @rmyndharis/antigravity-skills install --bundle core-dev
-
-  # Check health and installed skills
-  npx @rmyndharis/antigravity-skills doctor
-  npx @rmyndharis/antigravity-skills installed --global
-  ```
+# If using antigravity-awesome-skills, override its legacy default path with --path:
+npx antigravity-awesome-skills --path ~/.gemini/config/skills
+```
 
 ---
 
@@ -149,9 +145,9 @@ Legacy workflow files (`.agents/workflows/*.md`, `_agents/workflows/*.md`, `~/.g
 
 ---
 
-## 8. Cross-Agent Global Skill Locations (Claude, Codex, OpenCode, Antigravity)
+## 8. Cross-Agent Global Skill Locations & Plugin Caching
 
-To make a skill universally available across all major AI coding agents on a machine, install or symlink the skill folder into each agent's global skill discovery directory:
+To make a skill universally available across all major AI coding agents on a machine, install the skill folder into each agent's global skill discovery directory:
 
 | Agent / Platform | Global Skill Directory Path | Project-Scoped Path |
 | :--- | :--- | :--- |
@@ -161,4 +157,6 @@ To make a skill universally available across all major AI coding agents on a mac
 | **OpenAI Codex CLI** | `~/.codex/skills/<skill-name>/SKILL.md` | `<repo>/.agents/skills/<skill-name>/SKILL.md` |
 | **OpenCode** | `~/.config/opencode/skills/<skill-name>/SKILL.md` | `<repo>/.opencode/skills/<skill-name>/SKILL.md` |
 
-*(Run `npx github:qwe840608/agy-skill` to automatically install and synchronize `agy-skill` across all of these directories on Windows, macOS, or Linux.)*
+- **Upgrading Cached Plugins Across Harnesses**:
+  - Direct directory installations (`~/.gemini/config/skills/`, `~/.claude/skills/`, `~/.codex/skills/`) update immediately on the next session start when files are replaced via `npx --yes --allow-git=all github:qwe840608/agy-skill`.
+  - Marketplace/plugin-cached installations in Claude Code (`claude plugin update`) and Codex (`codex plugin marketplace upgrade`) key their cache by the version string in `package.json` / `plugin.json`; bump the version when publishing plugin updates.
