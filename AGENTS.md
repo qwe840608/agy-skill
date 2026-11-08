@@ -16,3 +16,4 @@ This repository (`https://github.com/qwe840608/agy-skill`) contains **`agy-skill
 4. **Sync every modification to local agents; publish only with approval**
    - After **any** edit to this repository, run `npm test` (installer/doctor/uninstall/sync tests in a scratch home; no real `agy` needed) and `npm run pack:check`, then `npm run sync` (equivalent to `node bin/cli.mjs sync --no-git`) so the change is copied to the global skill directories for Antigravity, Claude Code, Codex, and OpenCode. CI runs the same checks on Ubuntu, Windows, and macOS.
    - Commit and push to `origin main` only after the repository owner approves. `npm run sync:push` does the commit and push; the `post-commit` hook never pushes.
+   - Never run `npm publish` on your own. A release is the owner's decision: they bump `version`, approve, and complete npm's two-factor prompt themselves. `npm publish --dry-run` is fine at any time.

@@ -25,6 +25,8 @@ jobs:
         run: npm test
       - name: Package contents check
         run: npm run pack:check
+      - name: Publish dry-run (no credentials needed)
+        run: npm publish --dry-run --access public --ignore-scripts
       - name: Smoke-install into a scratch home
         shell: bash
         run: |

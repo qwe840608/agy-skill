@@ -23,37 +23,41 @@ What the skill gives an agent:
 
 **Requirements**: Node.js `>=18` (CI tests 18, 20, 22) and the `agy` CLI already installed and signed in once interactively (see https://antigravity.google/docs/cli/install). The installer never runs `agy` on your behalf beyond `--version`, `--help`, `models`, and `changelog`.
 
-**Recommended way: `npx` straight from GitHub.** The package is not on the npm registry yet (the name `agy-skill` was unclaimed as of 2026-11-09; publishing is planned but will only happen after a release check, see [Maintainer notes](#maintainer-notes)). Until then the GitHub form below is the only supported install path.
-
-> **npm v12+ (Node.js v25/v26+)**: modern `npm` disables Git-hosted packages by default (`npm error code EALLOWGIT`). Always include `--allow-git=all` when running via `npx github:...`.
+**Recommended way: `npx` from the npm registry.** The package is published as [`agy-skill`](https://www.npmjs.com/package/agy-skill) (first release 0.1.0, 2026-11-09). The package version is independent of the `agy` CLI version; the `agy` version a release was verified against is recorded in `version-state.json`.
 
 ```bash
 # Install (global, all supported agents; description language follows your OS locale)
-npx --yes --allow-git=all github:qwe840608/agy-skill
+npx --yes agy-skill
 
 # Force the skill description language (en | zh | both)
-npx --yes --allow-git=all github:qwe840608/agy-skill install --lang en
+npx --yes agy-skill install --lang en
 
 # Install into the current project only (.agents/skills/agy-skill)
-npx --yes --allow-git=all github:qwe840608/agy-skill install --workspace
+npx --yes agy-skill install --workspace
 
 # Install for specific agents only (antigravity,claude,codex,opencode)
-npx --yes --allow-git=all github:qwe840608/agy-skill install --agent antigravity,claude
+npx --yes agy-skill install --agent antigravity,claude
 
 # Check agy CLI version, OS locale, and where the skill is installed
-npx --yes --allow-git=all github:qwe840608/agy-skill doctor
+npx --yes agy-skill doctor
 
-# Update: re-run the install command (files are overwritten in place)
-npx --yes --allow-git=all github:qwe840608/agy-skill
+# Update: re-run the install command with @latest (files are overwritten in place)
+npx --yes agy-skill@latest
 
 # Uninstall (removes only the agy-skill folders, nothing else)
-npx --yes --allow-git=all github:qwe840608/agy-skill uninstall
+npx --yes agy-skill uninstall
+```
+
+**Alternative: straight from GitHub** (always the current `main`, no registry needed). Modern `npm` (v12+, Node.js v25/v26+) disables Git-hosted packages by default (`npm error code EALLOWGIT`), so include `--allow-git=all`:
+
+```bash
+npx --yes --allow-git=all github:qwe840608/agy-skill
 ```
 
 **For AI agents**, paste this into Claude Code, Codex, OpenCode, or Antigravity:
 
 ```text
-Run `npx --yes --allow-git=all github:qwe840608/agy-skill` to install the agy-skill (how to delegate work to the Google Antigravity CLI) into all global agent skill directories, then run `npx --yes --allow-git=all github:qwe840608/agy-skill doctor` to verify the installation.
+Run `npx --yes agy-skill` to install the agy-skill (how to delegate work to the Google Antigravity CLI) into all global agent skill directories, then run `npx --yes agy-skill doctor` to verify the installation.
 ```
 
 Default install locations:
@@ -167,7 +171,7 @@ This queries the local `agy` (`--version`, `--help`, `help <sub>`, `models`, `ch
 npm run sync:push
 ```
 
-**npm publishing (not done yet)**: `prepublishOnly` runs the tests and the pack check, so `npm publish` cannot ship a broken package. The remaining steps before a first release are: claim the `agy-skill` name under the maintainer's npm account, decide a version scheme independent of the `agy` version (today `package.json` mirrors agy's `1.5.3`, which is misleading), and run the install and `doctor` commands from a clean machine using the published tarball. Nothing publishes automatically.
+**Releasing to npm**: nothing publishes automatically. To cut a release, bump `version` in `package.json` (semver, independent of the `agy` version), commit, then run `npm publish --access public` from a terminal where you can complete npm's two-factor prompt in the browser. `prepublishOnly` runs the tests and the pack check first, so a broken package cannot ship. After publishing, verify from a clean directory with `AGY_SKILL_HOME=<scratch> npx --yes agy-skill@<version> doctor`. CI runs `npm publish --dry-run` on every push so packaging problems surface before release day. The 0.1.0 release was verified this way on Windows 11, Node 26, npm 12 (2026-11-09).
 
 ---
 

@@ -105,7 +105,8 @@ function printHelp() {
 agy-skill — Universal Google Antigravity Skill Installer & Synchronizer
 
 Usage:
-  npx --yes --allow-git=all github:qwe840608/agy-skill [command] [options]
+  npx --yes agy-skill [command] [options]
+  npx --yes --allow-git=all github:qwe840608/agy-skill [command] [options]   # current main, no registry
   agy-skill [command] [options]
 
 Commands:
@@ -126,17 +127,17 @@ Options:
 
 Examples:
   # One-click global install (auto-detects Chinese vs. English from your OS locale)
-  npx --yes --allow-git=all github:qwe840608/agy-skill
+  npx --yes agy-skill
 
   # Force English or Traditional Chinese skill description
-  npx --yes --allow-git=all github:qwe840608/agy-skill install --lang en
-  npx --yes --allow-git=all github:qwe840608/agy-skill install --lang zh
+  npx --yes agy-skill install --lang en
+  npx --yes agy-skill install --lang zh
 
   # Install into the current project workspace (.agents/skills/agy-skill)
-  npx --yes --allow-git=all github:qwe840608/agy-skill install --workspace
+  npx --yes agy-skill install --workspace
 
   # Check installation status & detected language
-  npx --yes --allow-git=all github:qwe840608/agy-skill doctor
+  npx --yes agy-skill doctor
 `);
 }
 

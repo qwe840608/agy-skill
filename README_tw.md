@@ -23,37 +23,41 @@
 
 **需求**：Node.js `>=18`（CI 測 18、20、22），以及已安裝並互動式登入過一次的 `agy` CLI（見 https://antigravity.google/docs/cli/install）。安裝器只會對 `agy` 執行 `--version`、`--help`、`models`、`changelog`，不會替你跑任何任務。
 
-**建議方式：直接從 GitHub 用 `npx`。** 套件目前還沒上 npm registry（`agy-skill` 這個名稱在 2026-11-09 確認尚未被使用；發布有規劃，但要先通過發版檢查，見〈維護者說明〉）。在那之前，下面的 GitHub 形式是唯一支援的安裝方式。
-
-> **npm v12+（Node.js v25/v26+）**：新版 `npm` 預設禁止抓取 git 類型套件（會出現 `npm error code EALLOWGIT`）。透過 `npx github:...` 執行時請加上 `--allow-git=all`。
+**建議方式：從 npm registry 用 `npx`。** 套件已發布為 [`agy-skill`](https://www.npmjs.com/package/agy-skill)（首版 0.1.0，2026-11-09）。套件版號和 `agy` CLI 的版本無關；每個版本驗證時用的 `agy` 版本記在 `version-state.json`。
 
 ```bash
 # 安裝（全域、所有支援的 agent；描述語言依系統語系）
-npx --yes --allow-git=all github:qwe840608/agy-skill
+npx --yes agy-skill
 
 # 手動指定技能描述語言（en | zh | both）
-npx --yes --allow-git=all github:qwe840608/agy-skill install --lang zh
+npx --yes agy-skill install --lang zh
 
 # 只裝到目前專案（.agents/skills/agy-skill）
-npx --yes --allow-git=all github:qwe840608/agy-skill install --workspace
+npx --yes agy-skill install --workspace
 
 # 只裝給指定的 agent（antigravity,claude,codex,opencode）
-npx --yes --allow-git=all github:qwe840608/agy-skill install --agent antigravity,claude
+npx --yes agy-skill install --agent antigravity,claude
 
 # 檢查 agy CLI 版本、系統語系與各 agent 的安裝狀態
-npx --yes --allow-git=all github:qwe840608/agy-skill doctor
+npx --yes agy-skill doctor
 
-# 更新：再跑一次安裝指令即可（原地覆寫）
-npx --yes --allow-git=all github:qwe840608/agy-skill
+# 更新：加上 @latest 再跑一次安裝指令（原地覆寫）
+npx --yes agy-skill@latest
 
 # 移除（只刪 agy-skill 資料夾，不碰其他東西）
-npx --yes --allow-git=all github:qwe840608/agy-skill uninstall
+npx --yes agy-skill uninstall
+```
+
+**替代方式：直接從 GitHub**（永遠是目前的 `main`，不經過 registry）。新版 `npm`（v12+，Node.js v25/v26+）預設禁止抓取 git 類型套件（會出現 `npm error code EALLOWGIT`），要加 `--allow-git=all`：
+
+```bash
+npx --yes --allow-git=all github:qwe840608/agy-skill
 ```
 
 **給 AI agent**，把下面這段貼給 Claude Code、Codex、OpenCode 或 Antigravity：
 
 ```text
-請執行 `npx --yes --allow-git=all github:qwe840608/agy-skill` 把 agy-skill（教你如何派工給 Google Antigravity CLI 的 skill）安裝到本機所有 agent 的全域技能目錄，接著執行 `npx --yes --allow-git=all github:qwe840608/agy-skill doctor` 驗證安裝狀態。
+請執行 `npx --yes agy-skill` 把 agy-skill（教你如何派工給 Google Antigravity CLI 的 skill）安裝到本機所有 agent 的全域技能目錄，接著執行 `npx --yes agy-skill doctor` 驗證安裝狀態。
 ```
 
 預設安裝位置：
@@ -167,7 +171,7 @@ npm run sync
 npm run sync:push
 ```
 
-**npm 發布（尚未進行）**：`prepublishOnly` 會先跑測試與打包檢查，`npm publish` 不可能送出壞掉的套件。第一次發布前還剩這幾步：用維護者的 npm 帳號登記 `agy-skill` 名稱；決定一套和 `agy` 版本脫鉤的版號（目前 `package.json` 跟著 agy 寫 `1.5.3`，會誤導）；在乾淨機器上用發布出去的 tarball 跑一次安裝與 `doctor`。沒有任何東西會自動發布。
+**發布到 npm**：沒有任何東西會自動發布。要出新版：先改 `package.json` 的 `version`（semver，和 `agy` 版本無關）、commit，然後在能用瀏覽器完成 npm 雙重驗證的終端機執行 `npm publish --access public`。`prepublishOnly` 會先跑測試與打包檢查，壞掉的套件送不出去。發布後在乾淨目錄用 `AGY_SKILL_HOME=<暫存目錄> npx --yes agy-skill@<版本> doctor` 驗證。CI 每次 push 都會跑 `npm publish --dry-run`，打包問題會在發版前浮現。0.1.0 已照這個流程在 Windows 11、Node 26、npm 12 驗證（2026-11-09）。
 
 ---
 
