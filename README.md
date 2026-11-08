@@ -17,19 +17,23 @@ Run a single command on any OS with Node.js (`>=18`).
 > **Note for npm v12+ (Node.js v25/v26+)**: Modern `npm` disables Git-hosted packages by default (`npm error code EALLOWGIT`). Always include `--allow-git=all` when running via `npx github:...`:
 
 ```bash
-# 1. One-click Global Install (Antigravity, Claude Code, OpenAI Codex, OpenCode)
+# 1. One-click Global Install (auto-detects your OS language: English or Traditional Chinese description)
 npx --yes --allow-git=all github:qwe840608/agy-skill
 
-# 2. Install into the current project workspace (.agents/skills/agy-skill)
+# 2. Explicitly choose the skill description language (en | zh | both)
+npx --yes --allow-git=all github:qwe840608/agy-skill install --lang en
+npx --yes --allow-git=all github:qwe840608/agy-skill install --lang zh
+
+# 3. Install into the current project workspace (.agents/skills/agy-skill)
 npx --yes --allow-git=all github:qwe840608/agy-skill install --workspace
 
-# 3. Install only for specific agents (comma-separated: antigravity,claude,codex,opencode)
+# 4. Install only for specific agents (comma-separated: antigravity,claude,codex,opencode)
 npx --yes --allow-git=all github:qwe840608/agy-skill install --agent antigravity,claude
 
-# 4. Check local agy CLI version & skill installation status across all agents
+# 5. Check local agy CLI version, OS locale & skill installation status across all agents
 npx --yes --allow-git=all github:qwe840608/agy-skill doctor
 
-# 5. Uninstall agy-skill
+# 6. Uninstall agy-skill
 npx --yes --allow-git=all github:qwe840608/agy-skill uninstall
 ```
 

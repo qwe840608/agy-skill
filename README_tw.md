@@ -17,19 +17,23 @@
 > **npm v12+ (Node.js v25/v26+) 注意事項**：新版 `npm` 預設禁止抓取 `git` 類型套件（會出現 `npm error code EALLOWGIT`）。透過 `npx github:...` 執行時請加上 `--allow-git=all`：
 
 ```bash
-# 1. 一鍵全域安裝（自動部署至 Antigravity、Claude Code、OpenAI Codex、OpenCode）
+# 1. 一鍵全域安裝（自動偵測系統語言：中文系統安裝繁中描述、英文系統安裝英文描述）
 npx --yes --allow-git=all github:qwe840608/agy-skill
 
-# 2. 僅安裝至當前專案的工作區目錄 (.agents/skills/agy-skill)
+# 2. 手動指定技能描述語言 (zh: 純繁中 | en: 純英文 | both: 中英雙語)
+npx --yes --allow-git=all github:qwe840608/agy-skill install --lang zh
+npx --yes --allow-git=all github:qwe840608/agy-skill install --lang en
+
+# 3. 僅安裝至當前專案的工作區目錄 (.agents/skills/agy-skill)
 npx --yes --allow-git=all github:qwe840608/agy-skill install --workspace
 
-# 3. 僅安裝給指定的 Agent（以逗號分隔：antigravity,claude,codex,opencode）
+# 4. 僅安裝給指定的 Agent（以逗號分隔：antigravity,claude,codex,opencode）
 npx --yes --allow-git=all github:qwe840608/agy-skill install --agent antigravity,claude
 
-# 4. 檢查本機 agy CLI 版本與各 Agent 的技能安裝狀態
+# 5. 檢查本機 agy CLI 版本、系統語系與各 Agent 的技能安裝狀態
 npx --yes --allow-git=all github:qwe840608/agy-skill doctor
 
-# 5. 移除已安裝的 agy-skill
+# 6. 移除已安裝的 agy-skill
 npx --yes --allow-git=all github:qwe840608/agy-skill uninstall
 ```
 

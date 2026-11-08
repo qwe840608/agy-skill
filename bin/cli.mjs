@@ -2,8 +2,9 @@
 /**
  * agy-skill Cross-Platform CLI (Windows, macOS, Linux)
  *
- * One-click installer, version introspector, and synchronizer for the
- * Universal Google Antigravity Skill across Antigravity, Claude Code, Codex, and OpenCode.
+ * One-click installer, locale-aware description localizer, version introspector,
+ * and synchronizer for the Universal Google Antigravity Skill across
+ * Antigravity, Claude Code, Codex, and OpenCode.
  */
 
 import { execFileSync, execSync } from 'node:child_process';
@@ -17,6 +18,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
 const HOME = os.homedir();
+
+const DESCRIPTIONS = {
+  en: 'Universal guide and operational playbook for Google Antigravity (App 2.0, agy CLI, IDE, Python SDK, and Customizations: Skills, Rules, Plugins, Hooks, MCP, Sidecars, Generative UI). Enables Claude Code, Codex, OpenCode, and Antigravity agents to orchestrate agy CLI headlessly, configure Antigravity, and auto-sync this skill on updates.',
+  zh: 'Google Antigravity 全方位操作與配置指南（涵蓋 App 2.0 桌面版、agy CLI 終端機非互動調度、IDE、Python SDK，以及客製化系統：Skills、Rules、Plugins、Hooks、MCP、Sidecars 排程自動化、Generative UI）。讓 Claude Code、Codex、OpenCode 與 Antigravity 代理能無頭調度 agy CLI、配置 Antigravity 並在更新時自動同步此技能。',
+};
+DESCRIPTIONS.both = `${DESCRIPTIONS.zh} | ${DESCRIPTIONS.en}`;
 
 const GLOBAL_TARGETS = {
   antigravity: {
@@ -37,6 +44,58 @@ const GLOBAL_TARGETS = {
   },
 };
 
+function detectSystemLocale() {
+  const envLocale =
+    process.env.AGY_SKILL_LANG ||
+    process.env.LC_ALL ||
+    process.env.LC_MESSAGES ||
+    process.env.LANG ||
+    '';
+  let intlLocale = '';
+  try {
+    intlLocale = Intl.DateTimeFormat().resolvedOptions().locale || '';
+  } catch {
+    intlLocale = '';
+  }
+  const combined = `${envLocale} ${intlLocale}`.toLowerCase();
+  const isZh = /\bzh([_-][a-z]+)?\b/.test(combined) || combined.includes('chinese');
+  return {
+    rawLocale: intlLocale || envLocale || 'en-US',
+    lang: isZh ? 'zh' : 'en',
+  };
+}
+
+function normalizeLangOption(val) {
+  if (!val) return 'auto';
+  const v = val.trim().toLowerCase();
+  if (v === 'zh' || v === 'zh-tw' || v === 'zh-hk' || v === 'zh-cn' || v === 'tw' || v === 'cn') {
+    return 'zh';
+  }
+  if (v === 'en' || v === 'en-us' || v === 'en-gb') {
+    return 'en';
+  }
+  if (v === 'both' || v === 'bilingual') {
+    return 'both';
+  }
+  return 'auto';
+}
+
+function resolveEffectiveLang(langOpt) {
+  const normalized = normalizeLangOption(langOpt);
+  if (normalized === 'auto') {
+    return detectSystemLocale().lang;
+  }
+  return normalized;
+}
+
+function localizeSkillMarkdown(rawSkillMd, targetLang) {
+  const desc = DESCRIPTIONS[targetLang] || DESCRIPTIONS.en;
+  return rawSkillMd.replace(
+    /^---\r?\nname:\s*agy-skill\r?\ndescription:\s*>-\r?\n[\s\S]*?\r?\n---/,
+    `---\nname: agy-skill\ndescription: >-\n  ${desc}\n---`
+  );
+}
+
 function printHelp() {
   console.log(`
 agy-skill — Universal Google Antigravity Skill Installer & Synchronizer
@@ -55,26 +114,25 @@ Commands:
 Options:
   -g, --global            Install/uninstall globally for all supported agents (default)
   -w, --workspace         Install/uninstall in current workspace (.agents/skills/agy-skill)
+  --lang <auto|zh|en|both> Language for SKILL.md description (default: auto-detects OS locale)
   --agent <list>          Comma-separated target agents: antigravity,claude,codex,opencode (default: all)
   --dir <path>            Custom target skills directory (overrides --global / --workspace)
   --no-git                Skip git commit/push during "sync"
   -h, --help              Show this help message
 
 Examples:
-  # One-click global install on Windows, macOS, or Linux (npm v12+ compatible)
+  # One-click global install (auto-detects Chinese vs. English from your OS locale)
   npx --yes --allow-git=all github:qwe840608/agy-skill
+
+  # Force English or Traditional Chinese skill description
+  npx --yes --allow-git=all github:qwe840608/agy-skill install --lang en
+  npx --yes --allow-git=all github:qwe840608/agy-skill install --lang zh
 
   # Install into the current project workspace (.agents/skills/agy-skill)
   npx --yes --allow-git=all github:qwe840608/agy-skill install --workspace
 
-  # Install only for Claude Code and Codex
-  npx --yes --allow-git=all github:qwe840608/agy-skill install --agent claude,codex
-
-  # Check installation status
+  # Check installation status & detected language
   npx --yes --allow-git=all github:qwe840608/agy-skill doctor
-
-  # Update snapshot from local agy release and sync to GitHub
-  npm run sync
 `);
 }
 
@@ -82,6 +140,7 @@ function parseCliArgs(argv) {
   const options = {
     command: 'install',
     scope: 'global',
+    lang: 'auto',
     agents: Object.keys(GLOBAL_TARGETS),
     customDir: process.env.AG_SKILLS_DIR || null,
     noGit: false,
@@ -98,6 +157,10 @@ function parseCliArgs(argv) {
       options.scope = 'workspace';
     } else if (arg === '--no-git') {
       options.noGit = true;
+    } else if (arg === '--lang' || arg === '-l') {
+      options.lang = argv[++i] || 'auto';
+    } else if (arg.startsWith('--lang=')) {
+      options.lang = arg.slice('--lang='.length);
     } else if (arg === '--agent' || arg === '--agents') {
       const val = argv[++i] || '';
       options.agents = val
@@ -246,14 +309,27 @@ function resolveInstallTargets(options) {
   return options.agents.map((key) => GLOBAL_TARGETS[key]).filter(Boolean);
 }
 
-function deploySkillFiles(targets) {
+function deploySkillFiles(targets, langOption = 'auto') {
+  const sysLocale = detectSystemLocale();
+  const effectiveLang = resolveEffectiveLang(langOption);
+  const langLabel =
+    effectiveLang === 'zh'
+      ? 'Traditional Chinese (繁體中文)'
+      : effectiveLang === 'both'
+        ? 'Bilingual (中英雙語)'
+        : 'English';
+  console.log(`  ℹ Description Language: ${langLabel} [detected OS locale: ${sysLocale.rawLocale}]`);
+
+  const rawSkillMd = fs.readFileSync(path.join(PACKAGE_ROOT, 'SKILL.md'), 'utf8');
+  const localizedSkillMd = localizeSkillMarkdown(rawSkillMd, effectiveLang);
+
   for (const target of targets) {
     fs.mkdirSync(target.dir, { recursive: true });
     const legacyScriptsDir = path.join(target.dir, 'scripts');
     if (fs.existsSync(legacyScriptsDir)) {
       fs.rmSync(legacyScriptsDir, { recursive: true, force: true });
     }
-    fs.copyFileSync(path.join(PACKAGE_ROOT, 'SKILL.md'), path.join(target.dir, 'SKILL.md'));
+    fs.writeFileSync(path.join(target.dir, 'SKILL.md'), localizedSkillMd, 'utf8');
     copyDirRecursive(path.join(PACKAGE_ROOT, 'references'), path.join(target.dir, 'references'));
     console.log(`  ✓ Installed -> ${target.name}: ${target.dir}`);
   }
@@ -369,7 +445,7 @@ ${builtinTableRows}
 function runInstall(options) {
   console.log(`\n[agy-skill] Installing on ${os.platform()} (${os.arch()})...`);
   const targets = resolveInstallTargets(options);
-  deploySkillFiles(targets);
+  deploySkillFiles(targets, options.lang);
   console.log('\n[agy-skill] Installation complete! Restart your agent session to load agy-skill.');
 }
 
@@ -401,7 +477,7 @@ function runSync(options) {
 
   console.log('=== [3/4] Synchronizing Skill to Agent Directories ===');
   const targets = resolveInstallTargets(options);
-  deploySkillFiles(targets);
+  deploySkillFiles(targets, options.lang);
 
   const gitDir = path.join(PACKAGE_ROOT, '.git');
   if (!options.noGit && fs.existsSync(gitDir)) {
@@ -430,9 +506,21 @@ function runSync(options) {
   }
 }
 
+function detectInstalledDescriptionLang(skillFilePath) {
+  if (!fs.existsSync(skillFilePath)) return null;
+  const content = fs.readFileSync(skillFilePath, 'utf8');
+  const hasZh = /[\u4e00-\u9fff]/.test(content.slice(0, 600));
+  const hasEn = /Universal guide and operational playbook/i.test(content.slice(0, 600));
+  if (hasZh && hasEn) return 'both';
+  if (hasZh) return 'zh';
+  return 'en';
+}
+
 function runDoctor() {
+  const sysLocale = detectSystemLocale();
   console.log('\n=== agy-skill Environment & Installation Doctor ===');
   console.log(`OS Platform : ${os.platform()} ${os.release()} (${os.arch()})`);
+  console.log(`OS Locale   : ${sysLocale.rawLocale} -> auto description language: "${sysLocale.lang}"`);
   console.log(`Node.js     : ${process.version}`);
 
   const bin = resolveAgyBinary();
@@ -444,13 +532,15 @@ function runDoctor() {
   console.log('\nGlobal Agent Skill Locations:');
   for (const target of Object.values(GLOBAL_TARGETS)) {
     const skillFile = path.join(target.dir, 'SKILL.md');
-    const installed = fs.existsSync(skillFile);
-    console.log(`  ${installed ? '✓ [Installed]' : '✗ [Missing]  '} ${target.name} -> ${target.dir}`);
+    const installedLang = detectInstalledDescriptionLang(skillFile);
+    const statusText = installedLang ? `✓ [Installed: lang=${installedLang}]` : '✗ [Missing]             ';
+    console.log(`  ${statusText} ${target.name} -> ${target.dir}`);
   }
 
   const wsSkill = path.join(process.cwd(), '.agents', 'skills', 'agy-skill', 'SKILL.md');
+  const wsLang = detectInstalledDescriptionLang(wsSkill);
   console.log(
-    `\nWorkspace (.agents/skills/agy-skill): ${fs.existsSync(wsSkill) ? '✓ [Installed]' : '- [Not installed in current CWD]'}`
+    `\nWorkspace (.agents/skills/agy-skill): ${wsLang ? `✓ [Installed: lang=${wsLang}]` : '- [Not installed in current CWD]'}`
   );
 }
 
