@@ -17,7 +17,9 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
-const HOME = os.homedir();
+// AGY_SKILL_HOME lets the test suite point every "global" path at a scratch
+// directory; normal users never set it.
+const HOME = process.env.AGY_SKILL_HOME || os.homedir();
 
 const DESCRIPTIONS = {
   en: 'How to delegate work to the Google Antigravity CLI (agy) in headless print mode from Claude Code, Codex, OpenCode, or any other agent: image/video/audio understanding, image generation, writing drafts, research and review passes with Gemini models, and driving Google Chrome via /browser. Gives the exact safe command (no --dangerously-skip-permissions), permission allowlists, and the causes of silent hangs.',
@@ -206,8 +208,10 @@ function parseCliArgs(argv) {
 }
 
 function resolveAgyBinary() {
-  if (process.env.AGY_BIN && fs.existsSync(process.env.AGY_BIN)) {
-    return process.env.AGY_BIN;
+  if (process.env.AGY_BIN) {
+    // An explicit override is authoritative: if it does not exist, report
+    // "not found" instead of silently falling back to whatever is on PATH.
+    return fs.existsSync(process.env.AGY_BIN) ? process.env.AGY_BIN : null;
   }
   const candidates = ['agy'];
   if (process.platform === 'win32' && process.env.LOCALAPPDATA) {

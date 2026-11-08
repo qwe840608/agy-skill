@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Syntax check
+        run: node --check bin/cli.mjs
+      - name: Installer / doctor / uninstall / sync tests
+        run: npm test
+      - name: Package contents check
+        run: npm run pack:check
+      - name: Smoke-install into a scratch home
+        shell: bash
+        run: |
+          export AGY_SKILL_HOME="$RUNNER_TEMP/agy-skill-home"
+          export AGY_BIN="$RUNNER_TEMP/no-such-agy"
+          node bin/cli.mjs install --global --lang both
+          node bin/cli.mjs doctor
+          node bin/cli.mjs uninstall --global

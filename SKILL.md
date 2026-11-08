@@ -105,6 +105,7 @@ Verified on agy v1.5.3 + Chrome 157, Windows 11 (2026-11-09): a YouTube search t
 
 ## 5. More Detail
 
+- [references/examples.md](references/examples.md): four copy-and-adapt briefs (video/image summary, second-opinion review, draft or image generation, Chrome task) with the permissions and verification steps for each.
 - [references/cli-and-headless.md](references/cli-and-headless.md): all flags, subcommands, JSON output, brief-writing, troubleshooting.
 - [references/version-snapshot.md](references/version-snapshot.md): installed version, exact `--help` output, model IDs (auto-generated).
 - [references/customizations.md](references/customizations.md) and [references/hooks-plugins-mcp.md](references/hooks-plugins-mcp.md): only when asked to configure agy's own skills, rules, plugins, hooks, or MCP servers.

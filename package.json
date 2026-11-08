@@ -9,6 +9,7 @@
   "files": [
     "bin/",
     "SKILL.md",
+    "EXAMPLES_tw.md",
     "references/",
     "version-state.json",
     "README.md",
@@ -19,7 +20,10 @@
     "start": "node ./bin/cli.mjs install",
     "sync": "node ./bin/cli.mjs sync --no-git",
     "sync:push": "node ./bin/cli.mjs sync",
-    "doctor": "node ./bin/cli.mjs doctor"
+    "doctor": "node ./bin/cli.mjs doctor",
+    "test": "node --test test/",
+    "pack:check": "node ./test/pack-check.mjs",
+    "prepublishOnly": "npm test && npm run pack:check"
   },
   "repository": {
     "type": "git",
