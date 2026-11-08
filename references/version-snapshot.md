@@ -29,7 +29,48 @@ gpt-oss-120b-medium	GPT-OSS 120B (Medium)
 ## 2. Top-Level CLI Flags & Subcommands (`agy --help`)
 
 ```text
+Usage of agy:
+  --add-dir                       Add a directory to the workspace (repeatable) (default [])
+  --agent                         Agent for the current CLI session
+  -c                              Short alias for --continue
+  --continue                      Continue the most recent conversation
+  --conversation                  Resume a previous conversation by ID
+  --dangerously-skip-permissions  Auto-approve all tool permission requests without prompting
+  --disable-slash-commands        Disable slash command and skill expansion in print mode
+  --effort                        Reasoning effort for the current CLI session (low|medium|high|xhigh|max)
+  -i                              Short alias for --prompt-interactive
+  --input-format                  Input format for print mode (text, stream-json). stream-json reads one NDJSON message per line from stdin and runs a turn for each; it requires --output-format stream-json (default text)
+  --json-schema                   Optional JSON schema string or path to a schema file to enforce structured output (for stream-json, only applicable to the final result)
+  --log-file                      Override CLI log file path
+  --mode                          Set the agent execution mode for this session (accept-edits, auto, plan)
+  --model                         Model for the current CLI session
+  --new-project                   Create a new project for this session
+  --output-format                 Output format for print mode (text, json, stream-json) (default text)
+  -p                              Short alias for --print
+  --print                         Run a single prompt non-interactively and print the response
+  --print-timeout                 Optional time limit for print mode; 0 waits until the turn completes (default 0s)
+  --project                       Project ID or project name for the current CLI session
+  --prompt                        Alias for --print
+  --prompt-interactive            Run an initial prompt interactively and continue the session
+  --remote-agent                  Run this session's conversations using remote agents; --project then names a remote project by ID or name, otherwise they open in this machine's default remote project
+  --remote-control                Create a remote connection for the CLI session on start up
+  --sandbox                       Run in a sandbox with terminal restrictions enabled
+  --settings                      Settings for this session only, never saved: a JSON object of settings.json keys, inline or as a file path
 
+Available subcommands:
+  acp             Start the Agent Client Protocol (ACP) stdio server
+  agent           List available agents
+  agents          List available agents
+  changelog       Show changelog and release notes
+  help            Show help for subcommands
+  install         Configure environment paths and shell settings
+  mcp             Manage MCP servers (add, remove, list, enable, disable)
+  mic-serve       Serve this machine's microphone to a CLI on another host
+  models          List available models
+  plugin          Manage plugins (install, uninstall, list, enable, disable)
+  plugins         Alias for plugin
+  remote-control  Manage the remote-control background daemon (start, status, stop)
+  update          Update CLI
 ```
 
 ---
@@ -38,47 +79,140 @@ gpt-oss-120b-medium	GPT-OSS 120B (Medium)
 
 ### `agy help acp`
 ```text
+Usage: agy acp [flags]
 
+Start the Agent Client Protocol (ACP) stdio server
+
+Flags:
+  --add-dir                         Add a directory to the workspace (repeatable) (default [])
+  --agent                           Agent for the ACP session
+  --app-data-dir                    Path where application data is stored (default antigravity-cli)
+  --app_data_dir                    Path where application data is stored (default antigravity-cli)
+  --cli_dir_name                    Subdirectory under app_data_dir for CLI settings and logs
+  --cli_log_file                    Override ACP log file path
+  --cloud_code_endpoint             CCPA API URL (default https://daily-cloudcode-pa.googleapis.com)
+  --dangerously-skip-permissions    Auto-approve all tool permission requests
+  --disable-telemetry               If true, disable telemetry
+  --disable_telemetry               If true, disable telemetry
+  --gemini-dir                      Path where Gemini files are stored (default .gemini)
+  --gemini_dir                      Path where Gemini files are stored (default .gemini)
+  -h                                Show help
+  --help                            Show help
+  --ide-mcp-port                    Port for host IDE tools MCP server (requires 'nc' in $PATH) (default 0)
+  --ide_mcp_port                    Port for host IDE tools MCP server (requires 'nc' in $PATH) (default 0)
+  --include-default-customizations  Include default customizations (default true)
+  --is_google3_workspace            Whether running in Google environment
+  --is_google_internal              Deprecated: use is_google3_workspace
+  --log-file                        Override ACP log file path
+  --login                           Log in with Google interactively, then exit (ACP terminal auth)
+  --override_user_agent_name        Override user agent name for HTTP requests
+  --process-per-session             Serve each session from an isolated worker process
+  --sandbox                         Run in a sandbox with terminal restrictions enabled
+  --stdio                           Use stdio JSON-RPC transport (default)
+  --use_stubby_auth                 Use LOAS auth
+  --worker                          Serve a single session for an ACP front process (internal)
 ```
 
 ### `agy help agent`
 ```text
+Usage: agy agent [flags]
 
+List available agents
+
+Flags:
+  -h      Show help
+  --help  Show help
 ```
 
 ### `agy help changelog`
 ```text
+Usage: agy changelog [flags]
 
+Show changelog and release notes
+
+Flags:
+  -h      Show help
+  --help  Show help
 ```
 
 ### `agy help install`
 ```text
+Usage: agy install [flags]
 
+Configure environment paths and shell settings
+
+Flags:
+  --dir           Custom directory target to configure PATH for
+  -h              Show help
+  --help          Show help
+  --skip-aliases  Bypasses shell profile alias purging
+  --skip-path     Bypasses shell profile PATH appending
 ```
 
 ### `agy help mcp`
 ```text
+Usage: agy mcp <subcommand> [flags] [args]
 
+Available subcommands:
+  add      Add or update an MCP server configuration
+  remove   Remove an MCP server configuration
+  list     List all configured MCP servers
+  enable   Enable an MCP server
+  disable  Disable an MCP server
+
+Run "agy mcp <subcommand> --help" for flags, argument rules, and examples.
 ```
 
 ### `agy help mic-serve`
 ```text
+Usage: agy mic-serve [flags]
 
+Serve this machine's microphone to a CLI on another host
+
+Flags:
+  --addr  Address to listen on; keep it on loopback (default 127.0.0.1:4713)
+  -h      Show help
+  --help  Show help
 ```
 
 ### `agy help models`
 ```text
+Usage: agy models [flags]
 
+List available models
+
+Flags:
+  -h      Show help
+  --help  Show help
 ```
 
 ### `agy help plugin`
 ```text
+Usage: agy plugin <command> [arguments]
 
+Commands:
+  list [--json]          List installed plugins
+  import [source]        Import plugins from gemini or claude
+  install <target>       Install a plugin (supports plugin[@marketplace])
+  uninstall <name>       Uninstall a plugin
+  enable <name>          Enable a plugin
+  disable <name>         Disable a plugin
+  validate [path] [--strict] [--json]
+                         Check a plugin's manifest and files
+  link <mp> <target>     Generate link to a marketplace
+  help                   Show this help
 ```
 
 ### `agy help remote-control`
 ```text
+Usage: agy remote-control <subcommand>
 
+Available subcommands:
+  start    Register and start the remote-control daemon
+  status   Show the daemon's status
+  stop     Stop the daemon and unregister it
+
+Run "agy remote-control <subcommand> --help" for flags.
 ```
 
 ### `agy help update`

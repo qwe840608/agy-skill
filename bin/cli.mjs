@@ -7,7 +7,7 @@
  * Antigravity, Claude Code, Codex, and OpenCode.
  */
 
-import { execFileSync, execSync } from 'node:child_process';
+import { execFileSync, execSync, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -20,8 +20,8 @@ const PACKAGE_ROOT = path.resolve(__dirname, '..');
 const HOME = os.homedir();
 
 const DESCRIPTIONS = {
-  en: 'Universal guide and operational playbook for Google Antigravity (App 2.0, agy CLI, IDE, Python SDK, and Customizations: Skills, Rules, Plugins, Hooks, MCP, Sidecars, Generative UI). Enables Claude Code, Codex, OpenCode, and Antigravity agents to orchestrate agy CLI headlessly, configure Antigravity, and auto-sync this skill on updates.',
-  zh: 'Google Antigravity 全方位操作與配置指南（涵蓋 App 2.0 桌面版、agy CLI 終端機非互動調度、IDE、Python SDK，以及客製化系統：Skills、Rules、Plugins、Hooks、MCP、Sidecars 排程自動化、Generative UI）。讓 Claude Code、Codex、OpenCode 與 Antigravity 代理能無頭調度 agy CLI、配置 Antigravity 並在更新時自動同步此技能。',
+  en: 'How to delegate work to the Google Antigravity CLI (agy) in headless print mode from Claude Code, Codex, OpenCode, or any other agent: image/video/audio understanding, image generation, writing drafts, research and review passes with Gemini models, and driving Google Chrome via /browser. Gives the exact safe command (no --dangerously-skip-permissions), permission allowlists, and the causes of silent hangs.',
+  zh: '從 Claude Code、Codex、OpenCode 或其他 agent 用無頭模式派工給 Google Antigravity CLI（agy）：看圖片／影片／音訊、生圖、寫草稿、用 Gemini 做研究與審查、用 /browser 操作 Google Chrome。提供不帶 --dangerously-skip-permissions 的安全指令、權限允許清單與常見卡住原因。',
 };
 DESCRIPTIONS.both = `${DESCRIPTIONS.zh} | ${DESCRIPTIONS.en}`;
 
@@ -90,10 +90,12 @@ function resolveEffectiveLang(langOpt) {
 
 function localizeSkillMarkdown(rawSkillMd, targetLang) {
   const desc = DESCRIPTIONS[targetLang] || DESCRIPTIONS.en;
-  return rawSkillMd.replace(
-    /^---\r?\nname:\s*agy-skill\r?\ndescription:\s*>-\r?\n[\s\S]*?\r?\n---/,
-    `---\nname: agy-skill\ndescription: >-\n  ${desc}\n---`
-  );
+  const frontmatterRe = /^---\r?\nname:\s*agy-skill\r?\ndescription:\s*>-\r?\n[\s\S]*?\r?\n---/;
+  if (!frontmatterRe.test(rawSkillMd)) {
+    console.warn('  ! SKILL.md frontmatter did not match the expected shape; description left unchanged.');
+    return rawSkillMd;
+  }
+  return rawSkillMd.replace(frontmatterRe, `---\nname: agy-skill\ndescription: >-\n  ${desc}\n---`);
 }
 
 function printHelp() {
@@ -106,7 +108,7 @@ Usage:
 
 Commands:
   install     Install agy-skill to AI coding agents (default when no command is given)
-  sync        Introspect local agy CLI, update snapshot, sync to agents, and push to Git
+  sync        Introspect local agy CLI, update snapshot, sync to agents (add --no-git to skip commit/push)
   doctor      Check local agy CLI status and installed skill locations across agents
   uninstall   Remove installed agy-skill from global or workspace directories
   help        Show this help message
@@ -114,10 +116,10 @@ Commands:
 Options:
   -g, --global            Install/uninstall globally for all supported agents (default)
   -w, --workspace         Install/uninstall in current workspace (.agents/skills/agy-skill)
-  --lang <auto|zh|en|both> Language for SKILL.md description (default: auto-detects OS locale)
+  -l, --lang <auto|zh|en|both>  Language for SKILL.md description (default: auto-detects OS locale)
   --agent <list>          Comma-separated target agents: antigravity,claude,codex,opencode (default: all)
   --dir <path>            Custom target skills directory (overrides --global / --workspace)
-  --no-git                Skip git commit/push during "sync"
+  --no-git                Skip git commit/push during "sync" (npm run sync passes this; use "npm run sync:push" to publish)
   -h, --help              Show this help message
 
 Examples:
@@ -134,6 +136,25 @@ Examples:
   # Check installation status & detected language
   npx --yes --allow-git=all github:qwe840608/agy-skill doctor
 `);
+}
+
+function parseAgentList(raw) {
+  const requested = raw
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const unknown = requested.filter((s) => !GLOBAL_TARGETS[s]);
+  if (unknown.length > 0) {
+    console.warn(
+      `  ! Unknown agent name(s) ignored: ${unknown.join(', ')} (valid: ${Object.keys(GLOBAL_TARGETS).join(', ')})`
+    );
+  }
+  const valid = requested.filter((s) => GLOBAL_TARGETS[s]);
+  if (valid.length === 0) {
+    console.error('  ✗ --agent did not name any valid agent; nothing to do.');
+    process.exit(1);
+  }
+  return valid;
 }
 
 function parseCliArgs(argv) {
@@ -162,17 +183,9 @@ function parseCliArgs(argv) {
     } else if (arg.startsWith('--lang=')) {
       options.lang = arg.slice('--lang='.length);
     } else if (arg === '--agent' || arg === '--agents') {
-      const val = argv[++i] || '';
-      options.agents = val
-        .split(',')
-        .map((s) => s.trim().toLowerCase())
-        .filter((s) => GLOBAL_TARGETS[s]);
+      options.agents = parseAgentList(argv[++i] || '');
     } else if (arg.startsWith('--agent=')) {
-      options.agents = arg
-        .slice('--agent='.length)
-        .split(',')
-        .map((s) => s.trim().toLowerCase())
-        .filter((s) => GLOBAL_TARGETS[s]);
+      options.agents = parseAgentList(arg.slice('--agent='.length));
     } else if (arg === '--dir') {
       options.customDir = argv[++i] || null;
     } else if (arg.startsWith('--dir=')) {
@@ -219,21 +232,24 @@ function resolveAgyBinary() {
   return null;
 }
 
+/**
+ * Run `agy <args>` and return its combined stdout + stderr.
+ * `agy --help` and `agy help <sub>` print usage to stderr with exit code 0,
+ * so stdout alone would be empty; both streams are captured and merged.
+ */
 function tryRunAgy(cmdArgs, bin = resolveAgyBinary()) {
   if (!bin) return null;
-  try {
-    return execFileSync(bin, cmdArgs, {
-      encoding: 'utf8',
-      timeout: 30000,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true,
-    }).trim();
-  } catch (err) {
-    if (err.code === 'ENOENT') return null;
-    const stdout = err.stdout ? String(err.stdout).trim() : '';
-    const stderr = err.stderr ? String(err.stderr).trim() : '';
-    return stdout || stderr || null;
-  }
+  const result = spawnSync(bin, cmdArgs, {
+    encoding: 'utf8',
+    timeout: 30000,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+  });
+  if (result.error && result.error.code === 'ENOENT') return null;
+  const stdout = result.stdout ? String(result.stdout).trim() : '';
+  const stderr = result.stderr ? String(result.stderr).trim() : '';
+  const combined = [stdout, stderr].filter(Boolean).join('\n').trim();
+  return combined || null;
 }
 
 function sha256(content) {
@@ -509,8 +525,13 @@ function runSync(options) {
 function detectInstalledDescriptionLang(skillFilePath) {
   if (!fs.existsSync(skillFilePath)) return null;
   const content = fs.readFileSync(skillFilePath, 'utf8');
-  const hasZh = /[\u4e00-\u9fff]/.test(content.slice(0, 600));
-  const hasEn = /Universal guide and operational playbook/i.test(content.slice(0, 600));
+  const frontmatterEnd = content.indexOf('\n---', 4);
+  const head = frontmatterEnd > 0 ? content.slice(0, frontmatterEnd) : content.slice(0, 1200);
+  const hasZh = /[\u4e00-\u9fff]/.test(head);
+  // Match the first clause of the current English description, so this keeps
+  // working as long as DESCRIPTIONS.en is edited in step with it.
+  const enMarker = DESCRIPTIONS.en.split(':')[0];
+  const hasEn = head.includes(enMarker);
   if (hasZh && hasEn) return 'both';
   if (hasZh) return 'zh';
   return 'en';

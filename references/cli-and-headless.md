@@ -1,6 +1,6 @@
 # Antigravity CLI (`agy`) & Headless Agent Orchestration
 
-This reference covers the full capabilities of the Antigravity CLI (`agy` v1.5.3+), including interactive TUI usage, battle-tested headless orchestration for external agents (Claude Code, OpenAI Codex, OpenCode, Pi, CI/CD pipelines), `Lead` vs. `Brain` orchestration architectures, structured JSON/NDJSON streaming, the Agent Client Protocol (`agy acp`), and production troubleshooting.
+This reference covers the Antigravity CLI (`agy` v1.5.3) in more depth than `SKILL.md`: flags, subcommands, headless use from external agents (Claude Code, OpenAI Codex, OpenCode, CI pipelines), two ways to split work between host and `agy`, structured JSON/NDJSON output, the Agent Client Protocol (`agy acp`), and troubleshooting. Exact flag text comes from `agy --help`; see `version-snapshot.md` for the verbatim output on this machine.
 
 ---
 
@@ -66,7 +66,7 @@ Run `agy [flags]` to start an interactive session or execute a non-interactive t
 | Flag | Description |
 | :--- | :--- |
 | `--sandbox` | Run in a sandbox with terminal restrictions enabled. |
-| `--dangerously-skip-permissions` | Auto-approve all tool permission requests without prompting. Required in `-p` mode when tools are used unless global allowlists are pre-configured. |
+| `--dangerously-skip-permissions` | Auto-approve all tool permission requests without prompting (since v1.5.2, commands on the system denylist are still blocked). **Not recommended and not needed**: Claude Code's auto mode blocks commands containing it, and the `--settings` allowlist (Section 5.4) achieves the same without granting everything. |
 | `--settings <json-or-path>` | Ephemeral settings for this session only (never saved to disk): pass an inline JSON object of `settings.json` keys or a file path. |
 | `--log-file <path>` | Override the CLI log file path. |
 
@@ -130,7 +130,7 @@ When a host agent (Claude Code, OpenAI Codex, OpenCode, Pi) delegates work to `a
 
 1. **`Lead` Mode (Host Directs, `agy` Executes)**:
    - The host agent frames the assignment, delegates noisy exploration, reviews, or scoped implementation to fast `gemini-3.8-flash-medium` / `gemini-3.8-flash-high` workers, waits for completion, and verifies the result before integrating.
-   - **Benchmark Insight**: Delegating deep codebase/web research (`DeepSearch`) reduces host token spend by **39% on Claude Code** and **16% on Codex**.
+   - Why it helps: the exploration tokens land in `agy`'s context instead of the host's, so the host conversation stays small. (No measured savings are claimed here; measure on your own workload.)
 2. **`Brain` Mode (`agy` Argon Proposes, Host Challenges & Verifies)**:
    - Hand the original goal, verbatim constraints, settled decisions, and known facts to **`gemini-4-argon-medium` or `gemini-4-argon-high`** without pre-biasing the solution.
    - Argon acts as an independent second-model reasoning lead and proposes the architectural route.
@@ -138,7 +138,7 @@ When a host agent (Claude Code, OpenAI Codex, OpenCode, Pi) delegates work to `a
 
 ### B. The 5 Specialist Personas & Contracts
 
-When crafting a prompt for `agy -p`, shape the brief around one of these five proven contracts:
+These five "personas" are conventions of this skill, not `agy` features: they are prompt shapes and default model picks that have worked well. Shape the brief around one of them:
 
 | Persona | Default Model | Contract & Prompt Guardrails |
 | :--- | :--- | :--- |
@@ -162,8 +162,8 @@ When crafting a prompt for `agy -p`, shape the brief around one of these five pr
 ### 1. Job Hangs Forever with 0% CPU and Empty Log
 - **Cause A (Open `stdin` Pipe)**: `agy` waits indefinitely on open `stdin` pipes in non-interactive shells.
   - **Fix**: Always append `</dev/null` (POSIX) or run via `cmd /c '... < NUL'` (Windows PowerShell).
-- **Cause B (Permission Prompt Freeze)**: Without `--dangerously-skip-permissions`, `agy`'s default `request-review` policy pauses on the first tool call waiting for interactive approval.
-  - **Fix**: Pass `--dangerously-skip-permissions` (with `--sandbox` for read-only jobs), or configure allow/deny rules in `~/.gemini/antigravity-cli/settings.json`.
+- **Cause B (Permission Auto-Denial)**: In `-p` mode, any tool not covered by `permissions.allow` is auto-denied and the run ends with `no output produced` (exit code may still be 0).
+  - **Fix**: Pass `--settings` with `"toolPermission": "request-review"` and narrow allow rules (see Subsection 4), and tell agy not to run terminal commands unless a `command(...)` rule allows them. Avoid `--dangerously-skip-permissions`; Claude Code blocks it.
 - **Note on Output Buffering**: In plain `text` print mode (`-p`), `agy` buffers most output until the turn finishes. A silent log for 5–10 minutes while CPU/child processes are active is normal. Use `--output-format stream-json` if you need live step-by-step event streaming.
 
 ### 2. `operation not permitted` on `~/.gemini/...` or `bind: operation not permitted`
@@ -175,7 +175,7 @@ When crafting a prompt for `agy -p`, shape the brief around one of these five pr
 - **Fix**: Always pass `--add-dir "<absolute-repo-path>"` on every invocation, including `--continue` / `--conversation` follow-ups.
 
 ### 4. Least-Privilege Headless Mode Without `--dangerously-skip-permissions` (Safe for Claude Code Auto Mode)
-- **Why**: Claude Code's Auto mode safety classifier blocks commands containing `--dangerously-skip-permissions` under `[Create Unsafe Agents]`. Additionally, in `agy` v1.1.13+, any tool in `-p` mode that requires interactive confirmation is immediately **auto-denied** (`soft-denied`, even if `--remote-control` is passed) with a stderr notice naming the required allow-rule.
+- **Why**: Claude Code's auto mode safety classifier blocks commands containing `--dangerously-skip-permissions` (reported as creating an unsafe agent). Independently, in `-p` mode any tool call that would need interactive confirmation is **auto-denied** with a stderr notice naming the allow-rule you would need (observed on agy v1.5.3, 2026-11-09; the `agy changelog` entry for 1.5.2 describes the same behaviour for enterprise-reviewed tools).
 - **How `agy` Evaluates Permissions**:
   - `toolPermission` in `settings.json` / `--settings` accepts `"request-review"` (default, checks allow/deny rules and execution mode) or `"always-proceed"`.
   - Under `"toolPermission": "request-review"`, `agy` evaluates `permissions.deny` → `permissions.allow` using 8 validated rule prefixes (`^(command|read_file|write_file|read_url|mcp|execute_url|download_url|unsandboxed)\s*\(.*\)$`):
@@ -186,38 +186,12 @@ When crafting a prompt for `agy -p`, shape the brief around one of these five pr
     - `unsandboxed(<command>)`
   - Passing `--mode accept-edits` with `--add-dir <dir>` automatically approves `write_file` and `edit_file` inside the workspace directory without needing `--dangerously-skip-permissions`.
 
-### 5. Headless Browser Automation (`agy -p "/browser ..."`)
-- **Built-in `browser` Subagent**: Although `agy agents` omits `browser` from top-level agents (it runs strictly as a subagent), `-p` mode expands `/browser` by default (unless `--disable-slash-commands` is passed) and instructs the main agent to call `invoke_subagent(TypeName="browser", ...)`.
-- **Available Tools inside `browser` Subagent**: Automatically mounts the built-in `chrome_devtools` MCP server (`mcp_chrome_devtools_list_pages`, `new_page`, `navigate_page`, `take_snapshot`, `take_screenshot` with `filePath` support, `click`, `fill`, `fill_form`, `type_text`, `press_key`, `wait_for`, `evaluate_script`, etc.).
-- **Prerequisite (Chrome Remote Debugging)**: `chrome_devtools` connects to an active Google Chrome instance with Remote Debugging enabled (`chrome://inspect/#remote-debugging` or `chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\temp\agy-chrome-profile"`, which creates `DevToolsActivePort`).
-- **Safe Delegation Example (No `--dangerously-skip-permissions`)**:
-  ```bash
-  agy -p "/browser $(cat brief.md)" \
-    --model gemini-3.8-flash-medium \
-    --mode accept-edits \
-    --sandbox \
-    --settings ./agy-browser-settings.json \
-    --add-dir . \
-    --print-timeout 8m < /dev/null
-  ```
-  Where `agy-browser-settings.json` scopes permissions strictly to the target domain and workspace:
-  ```json
-  {
-    "toolPermission": "request-review",
-    "artifactReviewPolicy": "always-proceed",
-    "permissions": {
-      "allow": [
-        "mcp(chrome_devtools/*)",
-        "execute_url(www.youtube.com)",
-        "execute_url(youtube.com)",
-        "execute_url(consent.youtube.com)",
-        "read_url(www.youtube.com)",
-        "read_url(youtube.com)",
-        "write_file(C:\\Absolute\\Path\\To\\Workspace)"
-      ]
-    }
-  }
-  ```
+### 5. Browser Tasks (`agy -p "/browser ..."`, Google Chrome Only)
+- `/browser` invokes the built-in `browser` subagent, which mounts the `chrome_devtools` MCP (`list_pages`, `new_page`, `navigate_page`, `take_snapshot`, `take_screenshot` with `filePath`, `click`, `fill`, `type_text`, `press_key`, `wait_for`, `evaluate_script`, ...).
+- agy starts `chrome-devtools-mcp` with `--autoConnect`, which reads `DevToolsActivePort` from Chrome's default `User Data` folder, so it attaches to the user's running Chrome and its signed-in profile.
+- Prerequisite (user action): enable remote debugging at `chrome://inspect/#remote-debugging`. Without it the run fails with a missing `DevToolsActivePort` error.
+- Use the allowlist in SKILL.md Section 2. Do not allow `evaluate_script` or `mcp(chrome_devtools/*)` unless the task needs it.
+- Edge and isolated profiles would need global `chrome-devtools-mcp` config changes; not supported by this skill.
 
 ### 6. Native Stream-JSON Diagnostics (`finished_reason` & `AGY_ERROR`)
 - When using `--output-format stream-json` or `json`:
@@ -226,8 +200,8 @@ When crafting a prompt for `agy -p`, shape the brief around one of these five pr
   - If `agy` outputs partial response text before hitting `print_timeout`, preserve the partial response and resume the conversation via `--conversation <id>` with a higher `--print-timeout`.
 
 ### 7. Wait vs. Poll (Preventing Host Context Explosion)
-- Never poll a background `agy` process in a tight sleep loop from Codex or Claude Code—every poll wake-up replays the entire host conversation context and inflates token costs (up to +86% on SWE-bench in Codex).
-- Instead, use background completion notifications or a single long blocking wait (`10m`–`15m`).
+- Never poll a background `agy` process in a tight sleep loop from Codex or Claude Code: every poll wake-up is another model turn that re-reads the whole host conversation, so the cost grows with the number of polls.
+- Instead, use the host's background-completion notification, or a single blocking run with `--print-timeout` set to the longest acceptable wait (`10m`–`15m`).
 
 ---
 
@@ -241,5 +215,9 @@ When crafting a prompt for `agy -p`, shape the brief around one of these five pr
 - `AGY_ACCOUNT=<account-name>`: Select a specific connected account for multi-account plugins.
 - `AGY_CLI_MAC_OPTION_AS_ALT=0`: Revert macOS Option-key shortcut behavior if needed.
 - `AGY_CLI_HIDE_ACCOUNT_INFO=1`: Hide email and plan tier from the CLI header.
-- `AG_SKILLS_DIR=<path>`: Override target skills directory for skill installers.
-- `PLUGIN_ROOT` & `PLUGIN_DATA`: Injected into plugin hook commands (v1.5.3+).
+- `PLUGIN_ROOT` & `PLUGIN_DATA`: Injected by `agy` into plugin hook commands (v1.5.3+).
+
+Variables read by this skill's installer (`bin/cli.mjs`), not by `agy`:
+- `AGY_BIN=<path>`: Explicit path to the `agy` binary when it is not on `PATH`.
+- `AGY_SKILL_LANG=<zh|en|both>`: Force the installed description language.
+- `AG_SKILLS_DIR=<path>`: Custom target skills directory (same as `--dir`).

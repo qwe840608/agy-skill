@@ -1,7 +1,7 @@
 #!/bin/sh
-# Automatically install/update global agent skills and push commits to GitHub origin main
+# After every commit, refresh the globally installed copies of agy-skill so
+# local agents (Antigravity, Claude Code, Codex, OpenCode) pick up the change.
+# Pushing is intentionally NOT done here: publish only after the owner approves
+# (`npm run sync:push` or a manual `git push`).
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 node "$REPO_ROOT/bin/cli.mjs" install --global
-if git remote | grep -q "^origin$"; then
-  git push origin main
-fi

@@ -1,17 +1,17 @@
-# Agent Instructions for `agy-skill` (`AGENTS.md` / `GEMINI.md`)
+# Agent Instructions for `agy-skill`
 
-This repository (`https://github.com/qwe840608/agy-skill`) contains the universal **Google Antigravity (`agy-skill`)** skill package for Antigravity, Claude Code, OpenAI Codex, OpenCode, and other AI coding agents.
+This repository (`https://github.com/qwe840608/agy-skill`) contains **`agy-skill`**: a skill that teaches AI coding agents (Claude Code, OpenAI Codex, OpenCode, Antigravity itself, and others) how to delegate work safely to the Google Antigravity CLI (`agy`) in headless print mode. Antigravity reads this file as a rules file; other agents read it as repository instructions.
 
 ## Mandatory Rules for All Agents
 
-1. **Keep Documentation English (with Locale-Aware Installer Description), Separate English & Traditional Chinese READMEs**:
-   - The canonical `SKILL.md` in the repository and all files under `references/` must be written in clear, token-efficient **English** aligned with official Antigravity terminology and schemas (`bin/cli.mjs` automatically localizes the `description` field to Traditional Chinese or English based on the user's OS locale during installation).
-   - `README.md` is the primary **English** README, and `README_tw.md` is the **Traditional Chinese (繁體中文)** README. Keep both files synchronized whenever documentation changes.
-2. **Always Update on Antigravity Releases**:
-   - Whenever the user upgrades Antigravity (`agy` CLI or Desktop App) or asks to update the skill, run:
-     ```bash
-     npm run sync
-     ```
-   - Inspect any diffs in `references/version-snapshot.md` and `~/.gemini/antigravity/builtin/skills/`. If new CLI flags, subcommands, hook contracts, plugin fields, or app features were added, update the corresponding guide in `references/*.md` and `SKILL.md`.
-3. **Always Sync Every Modification to Local Agents & GitHub**:
-   - After **any** edit to this repository, you **MUST** run `npm run sync` (or `node bin/cli.mjs sync`) so changes are automatically copied to the global skill directories for Antigravity, Claude Code, Codex, and OpenCode, and committed and pushed to `origin main` on GitHub (`https://github.com/qwe840608/agy-skill`).
+1. **Scope: the `agy` CLI only**
+   - `SKILL.md` is about running `agy -p` from another agent. Keep the Antigravity desktop app, IDE, Python SDK, sidecars, and generative UI out of scope unless the owner asks to add them back. `references/customizations.md` and `references/hooks-plugins-mcp.md` stay as optional deep dives for configuring `agy` itself.
+2. **Keep documentation English (locale-aware installer description), separate English & Traditional Chinese READMEs**
+   - The canonical `SKILL.md` and all files under `references/` must be written in clear, token-efficient **English** aligned with official Antigravity terminology. `bin/cli.mjs` localizes only the `description` field (Traditional Chinese or English) at install time; keep `DESCRIPTIONS` in `bin/cli.mjs` identical in meaning to the `description` in `SKILL.md`.
+   - `README.md` is the primary **English** README; `README_tw.md` is the **Traditional Chinese (繁體中文)** README. Update both whenever documentation changes.
+   - Every factual claim about `agy` behaviour must be backed by something checkable: `agy --help`, `agy changelog`, the official docs, or a dated local test noted in the text. Do not add benchmark numbers or version claims without a source.
+3. **Update on Antigravity releases**
+   - Whenever the user upgrades Antigravity or asks to update the skill, run `npm run sync` (this does **not** touch git). Inspect the diff in `references/version-snapshot.md` and `~/.gemini/antigravity/builtin/skills/`; if flags, subcommands, permission rules, or hook contracts changed, update `SKILL.md` and `references/*.md` to match, then run `npm run sync` again.
+4. **Sync every modification to local agents; publish only with approval**
+   - After **any** edit to this repository, run `npm run sync` (equivalent to `node bin/cli.mjs sync --no-git`) so the change is copied to the global skill directories for Antigravity, Claude Code, Codex, and OpenCode.
+   - Commit and push to `origin main` only after the repository owner approves. `npm run sync:push` does the commit and push; the `post-commit` hook never pushes.
