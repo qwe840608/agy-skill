@@ -94,19 +94,22 @@ agy plugin list --json
 
 **CRITICAL RULE**: Whenever Antigravity (`agy` CLI or Desktop App) updates, or whenever any file in the `agy-skill` repository is modified:
 
-1. **Run the Auto-Introspection & Sync Script** (from the `agy-skill` repository or installed skill directory):
+1. **Run the Auto-Introspection & Sync CLI**:
    ```bash
-   node scripts/update-and-sync.mjs
+   # Inside the agy-skill repository checkout:
+   npm run sync
+
+   # Or from anywhere via npx:
+   npx github:qwe840608/agy-skill sync
    ```
-   *(Or on Windows PowerShell: `pwsh -File scripts/update-and-sync.ps1`; pass `--no-git` if running outside a git checkout)*
-2. **What the script does automatically**:
+2. **What the CLI does automatically**:
    - Queries `agy --version`, `agy --help`, all `agy help <subcommand>` outputs, `agy models`, and `agy changelog`.
    - Scans `~/.gemini/antigravity/builtin/skills/` for any newly added or updated built-in Antigravity documentation.
    - Regenerates `references/version-snapshot.md` and updates `version-state.json`.
    - Synchronizes the updated skill across all local agent directories (`~/.gemini/config/skills/agy-skill`, `~/.claude/skills/agy-skill`, `~/.codex/skills/agy-skill`, `~/.config/opencode/skills/agy-skill`).
    - Commits and pushes all changes directly to the public GitHub repository (`https://github.com/qwe840608/agy-skill`).
 3. **Semantic Documentation Review**:
-   - If `update-and-sync.mjs` reports a version bump or changed builtin skill hashes, inspect the diff in `references/version-snapshot.md` and update the corresponding guide in `references/*.md` or `SKILL.md` so behavioral guides stay 100% aligned with the new release, then re-run `node scripts/update-and-sync.mjs`.
+   - If `npm run sync` reports a version bump or changed builtin skill hashes, inspect the diff in `references/version-snapshot.md` and update the corresponding guide in `references/*.md` or `SKILL.md` so behavioral guides stay 100% aligned with the new release, then re-run `npm run sync`.
 
 ---
 

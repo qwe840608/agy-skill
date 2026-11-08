@@ -1,0 +1,47 @@
+{
+  "name": "agy-skill",
+  "version": "1.5.3",
+  "description": "Universal Google Antigravity (App 2.0, agy CLI, IDE, SDK & Customizations) Skill for Claude Code, OpenAI Codex, OpenCode, and Antigravity agents.",
+  "type": "module",
+  "bin": {
+    "agy-skill": "./bin/cli.mjs"
+  },
+  "files": [
+    "bin/",
+    "SKILL.md",
+    "references/",
+    "version-state.json",
+    "README.md",
+    "README_tw.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node ./bin/cli.mjs install",
+    "sync": "node ./bin/cli.mjs sync",
+    "doctor": "node ./bin/cli.mjs doctor"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qwe840608/agy-skill.git"
+  },
+  "keywords": [
+    "antigravity",
+    "google-antigravity",
+    "agy",
+    "agent-skills",
+    "claude-code",
+    "codex",
+    "opencode",
+    "ai-agent",
+    "mcp"
+  ],
+  "author": "qwe840608",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/qwe840608/agy-skill/issues"
+  },
+  "homepage": "https://github.com/qwe840608/agy-skill#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

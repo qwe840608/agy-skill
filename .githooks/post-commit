@@ -1,7 +1,7 @@
 #!/bin/sh
 # Automatically install/update global agent skills and push commits to GitHub origin main
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-node "$REPO_ROOT/scripts/update-and-sync.mjs" --no-git
+node "$REPO_ROOT/bin/cli.mjs" install --global
 if git remote | grep -q "^origin$"; then
   git push origin main
 fi

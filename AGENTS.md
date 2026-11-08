@@ -10,8 +10,8 @@ This repository (`https://github.com/qwe840608/agy-skill`) contains the universa
 2. **Always Update on Antigravity Releases**:
    - Whenever the user upgrades Antigravity (`agy` CLI or Desktop App) or asks to update the skill, run:
      ```bash
-     node scripts/update-and-sync.mjs
+     npm run sync
      ```
    - Inspect any diffs in `references/version-snapshot.md` and `~/.gemini/antigravity/builtin/skills/`. If new CLI flags, subcommands, hook contracts, plugin fields, or app features were added, update the corresponding guide in `references/*.md` and `SKILL.md`.
 3. **Always Sync Every Modification to Local Agents & GitHub**:
-   - After **any** edit to this repository, you **MUST** run `node scripts/update-and-sync.mjs` (or ensure changes are committed and pushed to `origin main` on GitHub `https://github.com/qwe840608/agy-skill` and copied to the global skill directories for Antigravity, Claude Code, Codex, and OpenCode).
+   - After **any** edit to this repository, you **MUST** run `npm run sync` (or `node bin/cli.mjs sync`) so changes are automatically copied to the global skill directories for Antigravity, Claude Code, Codex, and OpenCode, and committed and pushed to `origin main` on GitHub (`https://github.com/qwe840608/agy-skill`).

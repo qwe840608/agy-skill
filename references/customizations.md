@@ -161,4 +161,4 @@ To make a skill universally available across all major AI coding agents on a mac
 | **OpenAI Codex CLI** | `~/.codex/skills/<skill-name>/SKILL.md` | `<repo>/.agents/skills/<skill-name>/SKILL.md` |
 | **OpenCode** | `~/.config/opencode/skills/<skill-name>/SKILL.md` | `<repo>/.opencode/skills/<skill-name>/SKILL.md` |
 
-*(Run `node scripts/update-and-sync.mjs` from the `agy-skill` directory to automatically synchronize `agy-skill` across all of these directories on your machine.)*
+*(Run `npx github:qwe840608/agy-skill` to automatically install and synchronize `agy-skill` across all of these directories on Windows, macOS, or Linux.)*

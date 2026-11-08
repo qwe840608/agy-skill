@@ -2,7 +2,38 @@
 
 English | [繁體中文](README_tw.md)
 
-**`agy-skill`** is a comprehensive, universal AI Agent Skill package for **Google Antigravity**—covering **Antigravity 2.0 Desktop App**, **`agy` CLI**, **Antigravity IDE**, **Python SDK**, and the **Customization System**. It is designed to be understood and used seamlessly by **Claude Code**, **OpenAI Codex**, **OpenCode**, **Cursor**, and **Antigravity** itself.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**`agy-skill`** is a comprehensive, universal AI Agent Skill package for **Google Antigravity**—covering **Antigravity 2.0 Desktop App**, **`agy` CLI**, **Antigravity IDE**, **Python SDK**, and the **Customization System**. It is designed to be understood and used seamlessly by **Claude Code**, **OpenAI Codex**, **OpenCode**, **Cursor**, and **Antigravity** itself across **Windows, macOS, and Linux**.
+
+---
+
+## One-Click Installation via `npx` (Windows / macOS / Linux)
+
+No manual cloning required. Run a single command on any OS with Node.js (`>=18`) to install `agy-skill` across your AI coding agents:
+
+```bash
+# 1. One-click Global Install (Antigravity, Claude Code, OpenAI Codex, OpenCode)
+npx github:qwe840608/agy-skill
+
+# 2. Install into the current project workspace (.agents/skills/agy-skill)
+npx github:qwe840608/agy-skill install --workspace
+
+# 3. Install only for specific agents (comma-separated: antigravity,claude,codex,opencode)
+npx github:qwe840608/agy-skill install --agent antigravity,claude
+
+# 4. Check local agy CLI version & skill installation status across all agents
+npx github:qwe840608/agy-skill doctor
+
+# 5. Uninstall agy-skill
+npx github:qwe840608/agy-skill uninstall
+```
+
+By default, `npx github:qwe840608/agy-skill` installs the skill into:
+1. **Antigravity (App 2.0 / `agy` CLI / IDE)**: `~/.gemini/config/skills/agy-skill`
+2. **Claude Code**: `~/.claude/skills/agy-skill`
+3. **OpenAI Codex CLI**: `~/.codex/skills/agy-skill`
+4. **OpenCode**: `~/.config/opencode/skills/agy-skill`
 
 ---
 
@@ -16,7 +47,7 @@ English | [繁體中文](README_tw.md)
 | **5 Customization Pillars** | Full specification of `.agents/` & `~/.gemini/config/` 5-tier loading precedence, **Rules** (24KB per-file cap / 20,000-token budget demotion), **Skills** (`skills.json`), **Plugins** (`plugin.json`, Language Server `GetAllPlugins` RPC & `customization://<dir>` links), **Hooks** (`hooks.json` 6 lifecycle events, camelCase stdin/stdout contracts, `PLUGIN_ROOT`/`PLUGIN_DATA`), and **MCP** (Stdio & Streamable HTTP). |
 | **Sidecars, Scheduled Automations & Generative UI** | Complete guide for `~/.gemini/config/sidecars/<id>/sidecar.json` (`builtin: "schedule"`, `CRON_TZ`, `agentapi new-conversation`, least-privilege `access_grants`), UI Plugin Panes (`sidecar://`), and inline Generative UI (`<agent-embed>` & gstatic Tailwind rules). |
 | **Python SDK (`google-antigravity`)** | Covers `Agent`, `LocalAgentConfig`, `CapabilitiesConfig`, and async streaming for `thoughts` and `tool_calls`. |
-| **Auto-Introspection & Multi-Agent Sync** | Built-in `scripts/update-and-sync.mjs` introspects local `agy` version, flags, models, changelog, and builtin skill SHA-256 hashes, updates the snapshot, installs across 4 major agent skill directories, and auto-commits & pushes to GitHub. |
+| **Auto-Introspection & Multi-Agent Sync** | Built-in `bin/cli.mjs` (`npm run sync`) introspects local `agy` version, flags, models, changelog, and builtin skill SHA-256 hashes, updates the snapshot, installs across 4 major agent skill directories, and auto-commits & pushes to GitHub. |
 
 ---
 
@@ -24,54 +55,38 @@ English | [繁體中文](README_tw.md)
 
 ```text
 agy-skill/
+├── package.json                       # Cross-platform npm package manifest & CLI bin registration
+├── bin/
+│   └── cli.mjs                        # Cross-platform one-click installer, doctor & auto-sync CLI
 ├── SKILL.md                           # Core skill entrypoint (Progressive Disclosure router & quick commands)
 ├── AGENTS.md                          # Mandatory maintenance rules for AI agents (auto-update & GitHub sync)
 ├── README.md                          # Primary English documentation
 ├── README_tw.md                       # Traditional Chinese (繁體中文) documentation
+├── LICENSE                            # MIT License
 ├── version-state.json                 # Auto-tracked agy version, CLI help hashes, and builtin skills SHA-256 state
-├── references/
-│   ├── cli-and-headless.md            # agy CLI flags, headless JSON/NDJSON streaming, ACP Server guide
-│   ├── app-and-ide.md                 # Antigravity 2.0 Desktop App & Antigravity IDE operations and permissions
-│   ├── customizations.md              # 5 Customization pillars, priority order, Rules budgets, skills.json
-│   ├── hooks-plugins-mcp.md           # hooks.json 6 event contracts, plugin.json, LS RPC, mcp_config.json
-│   ├── sidecars-ui-sdk.md             # Scheduled Automations (sidecar.json), UI Panes, Generative UI, Python SDK
-│   └── version-snapshot.md            # Auto-generated local agy CLI / Models / Changelog / Builtin skills snapshot
-└── scripts/
-    ├── update-and-sync.mjs            # Cross-platform introspection, snapshot generator, multi-agent installer & GitHub sync
-    ├── update-and-sync.ps1            # Windows PowerShell wrapper
-    └── update-and-sync.sh             # macOS / Linux Bash wrapper
+└── references/
+    ├── cli-and-headless.md            # agy CLI flags, headless JSON/NDJSON streaming, ACP Server guide
+    ├── app-and-ide.md                 # Antigravity 2.0 Desktop App & Antigravity IDE operations and permissions
+    ├── customizations.md              # 5 Customization pillars, priority order, Rules budgets, skills.json
+    ├── hooks-plugins-mcp.md           # hooks.json 6 event contracts, plugin.json, LS RPC, mcp_config.json
+    ├── sidecars-ui-sdk.md             # Scheduled Automations (sidecar.json), UI Panes, Generative UI, Python SDK
+    └── version-snapshot.md            # Auto-generated local agy CLI / Models / Changelog / Builtin skills snapshot
 ```
 
 ---
 
-## One-Click Installation & Cross-Agent Synchronization
+## Maintainer Sync & Auto-Update
 
-Clone this repository and run the synchronization script to introspect your local Antigravity installation and deploy `agy-skill` to all major AI coding agents on your machine:
+Whenever Antigravity (`agy` CLI or Desktop App) updates, run the sync command inside a repository checkout (or ask your AI agent to *"Update agy-skill"*):
 
 ```bash
-git clone https://github.com/qwe840608/agy-skill.git
-cd agy-skill
-
-# Install to all local agents (Antigravity, Claude Code, Codex, OpenCode) without pushing to Git
-node scripts/update-and-sync.mjs --no-git
-
-# Maintainers: Introspect local Antigravity, sync to all agents, and commit & push to GitHub
-node scripts/update-and-sync.mjs
-
-# Windows PowerShell wrapper
-pwsh -File scripts/update-and-sync.ps1
+npm run sync
 ```
 
-The script automatically installs and synchronizes `agy-skill` to:
-1. **Antigravity (App 2.0 / `agy` CLI / IDE)**: `~/.gemini/config/skills/agy-skill`
-2. **Claude Code**: `~/.claude/skills/agy-skill`
-3. **OpenAI Codex CLI**: `~/.codex/skills/agy-skill`
-4. **OpenCode**: `~/.config/opencode/skills/agy-skill`
-
-> **Whenever Antigravity Updates**: Simply tell any agent *"Update agy-skill"* or run `node scripts/update-and-sync.mjs` to automatically detect new CLI flags, models, changelog entries, and built-in documentation diffs, update the skill, and push to GitHub.
+This automatically introspects the new `agy` release, updates `references/version-snapshot.md` and `version-state.json`, syncs the updated skill across all local agents, and commits & pushes to GitHub.
 
 ---
 
 ## License
 
-MIT
+Released under the [MIT License](LICENSE).
