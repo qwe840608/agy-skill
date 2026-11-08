@@ -1,10 +1,10 @@
 {
   "name": "agy-skill",
-  "version": "1.5.3",
+  "version": "0.1.0",
   "description": "讓任何 AI agent 安全地用無頭模式派工給 Google Antigravity CLI（agy）的 skill | Agent skill for safely delegating work to the Google Antigravity CLI (agy) in headless print mode from Claude Code, OpenAI Codex, OpenCode, and other agents.",
   "type": "module",
   "bin": {
-    "agy-skill": "./bin/cli.mjs"
+    "agy-skill": "bin/cli.mjs"
   },
   "files": [
     "bin/",
