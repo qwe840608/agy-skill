@@ -1,0 +1,52 @@
+{
+  "agyVersion": "1.5.3",
+  "models": [
+    "gemini-4-argon-medium\tGemini 4 Argon (Medium)",
+    "gemini-4-argon-high\tGemini 4 Argon (High)",
+    "gemini-4-argon-low\tGemini 4 Argon (Low)",
+    "gemini-3.8-flash-high\tGemini 3.8 Flash (High)",
+    "gemini-3.8-flash-medium\tGemini 3.8 Flash (Medium)",
+    "gemini-3.8-flash-low\tGemini 3.8 Flash (Low)",
+    "claude-opus-5-5-low\tClaude Opus 5.5 (Low)",
+    "claude-opus-5-5-medium\tClaude Opus 5.5 (Medium)",
+    "claude-opus-5-5-high\tClaude Opus 5.5 (High)",
+    "claude-sonnet-5-5-low\tClaude Sonnet 5.5 (Low)",
+    "claude-sonnet-5-5-medium\tClaude Sonnet 5.5 (Medium)",
+    "claude-sonnet-5-5-high\tClaude Sonnet 5.5 (High)",
+    "gpt-oss-120b-medium\tGPT-OSS 120B (Medium)"
+  ],
+  "mainHelpHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "subcommandHelpHashes": {
+    "acp": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "agent": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "changelog": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "install": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "mcp": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "mic-serve": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "models": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "plugin": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "remote-control": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "update": "cb683c59c72a655ebf339be49ffae89a06271b157e0ed1162d2518f0c7a01f71"
+  },
+  "builtinSkillHashes": {
+    "agy-customizations/docs/hooks.md": "31749bcc58053efc852a20110e0a90716d235796a03262ae507a1b5f09177898",
+    "agy-customizations/docs/json_configs.md": "c15221be619c411058179fb1da85195894e33502dd074eba64e6a609572488b6",
+    "agy-customizations/docs/mcp_servers.md": "7e34d5924e3574a60b75e8972d121de6923a3e7b9248c3c95434f26823fe18cf",
+    "agy-customizations/docs/plugins.md": "6dc3064ac51957d0c3ade9aa9fb62f546f0ae64334a7653fab993598b69903a4",
+    "agy-customizations/docs/rules.md": "063ab1c908fae4798d9a1f5981ed57b7570a860ceb0e5850816aefddf72b8b54",
+    "agy-customizations/docs/skills.md": "c4eba3bc9a8775928704d1b7feede20871b25f8d427c6cd6757b7edd54b3ae60",
+    "agy-customizations/SKILL.md": "79c8885e76ce449e82016b37b53dfcc3ff5afefd90a23ea83b24148f41f33fa1",
+    "antigravity_guide/references/app.md": "5adba0e3ca6dbf08d7ad1c2b136f88c067e175b454f0179fc7aa3c4783d9f5ab",
+    "antigravity_guide/references/cli.md": "1499e0ac083227b88e74373d46672afccd1ffe31d0a5136bcc352fe72c582d2a",
+    "antigravity_guide/references/ide.md": "e3da87b168f25f229a14a4547d7833e8e49191f1a85346f463c01f886a64693d",
+    "antigravity_guide/references/sdk.md": "a20587f3cedf7b8c6f7501f71fc7985d76c64007f7581690f68c0ffdc4357560",
+    "antigravity_guide/SKILL.md": "9fc5f6570e91dd792dab582d4e1cc7e7bd25b303c1583c6f118a07ec6bb3dd1d",
+    "automation/SKILL.md": "43f296abc2f206dc625669d38035be3b61a46cad1596b27dbf1134d30cf8d36b",
+    "generative_ui/SKILL.md": "ce3390af7b2db6d46bb8bfe7a9af3afced9fa26700fb8b7945d3a9ab66fd4830",
+    "migrate-workflows/SKILL.md": "ee8b18d875bba52c024c609f8cbdaf5bbf60396e0f826944c38ce191590cb787",
+    "permissioned-github/SKILL.md": "5779716732c7a75681aa980c76355ae8b675f881e742b74f93e4be14b4abfc9d",
+    "plugin/SKILL.md": "e47973a8c26543f1361a422ae2f7dbf2952bd541ab0744713dc850b001ef0c26",
+    "run-workflow/SKILL.md": "4a524107cb6173d75a54c2a7de3addeb413d7bdb868c8279682ded74672beb1e",
+    "ui-plugin-navigation/SKILL.md": "79ec8489d201382989061aab44dfd42ad5f586d88621b867bdca90284bd62af5"
+  }
+}
