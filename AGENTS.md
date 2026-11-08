@@ -4,8 +4,9 @@ This repository (`https://github.com/qwe840608/agy-skill`) contains the universa
 
 ## Mandatory Rules for All Agents
 
-1. **Keep Documentation English, Separate English & Traditional Chinese READMEs**:
-   - `SKILL.md` and all files under `references/` must be written in clear, token-efficient **English** aligned with official Antigravity terminology and schemas.
+1. **Keep Documentation English (with Bilingual Skill Description), Separate English & Traditional Chinese READMEs**:
+   - The `description` field in `SKILL.md`'s YAML frontmatter must include both **English** and **Traditional Chinese (繁體中文)** trigger descriptions so agents match prompts in either language.
+   - The body of `SKILL.md` and all files under `references/` must be written in clear, token-efficient **English** aligned with official Antigravity terminology and schemas.
    - `README.md` is the primary **English** README, and `README_tw.md` is the **Traditional Chinese (繁體中文)** README. Keep both files synchronized whenever documentation changes.
 2. **Always Update on Antigravity Releases**:
    - Whenever the user upgrades Antigravity (`agy` CLI or Desktop App) or asks to update the skill, run:

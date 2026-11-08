@@ -7,7 +7,7 @@ description: >-
   Antigravity agents to orchestrate agy CLI headlessly, configure Antigravity,
   and auto-update this skill when Antigravity updates. Use whenever the user
   mentions Antigravity, agy, .agents/, GEMINI.md, sidecars, plugins, or asks to
-  update/sync agy-skill.
+  update/sync agy-skill. | Google Antigravity 全方位操作與配置指南（涵蓋 App 2.0 桌面版、agy CLI 終端機非互動調度、IDE、Python SDK，以及客製化系統：Skills、Rules、Plugins、Hooks、MCP、Sidecars 排程自動化、Generative UI）。當使用者提及 Antigravity、agy、委派子代理審查/研究/生圖、配置 .agents/ 或 ~/.gemini/、或要求更新/同步 agy-skill 時使用。
 ---
 
 # Google Antigravity (`agy`) Universal Agent Skill
