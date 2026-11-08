@@ -21,7 +21,7 @@
     "sync": "node ./bin/cli.mjs sync --no-git",
     "sync:push": "node ./bin/cli.mjs sync",
     "doctor": "node ./bin/cli.mjs doctor",
-    "test": "node --test test/",
+    "test": "node --test test/cli.test.mjs",
     "pack:check": "node ./test/pack-check.mjs",
     "prepublishOnly": "npm test && npm run pack:check"
   },
