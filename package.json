@@ -1,7 +1,7 @@
 {
   "name": "agy-skill",
   "version": "1.5.3",
-  "description": "Universal Google Antigravity (App 2.0, agy CLI, IDE, SDK & Customizations) Skill for Claude Code, OpenAI Codex, OpenCode, and Antigravity agents.",
+  "description": "Google Antigravity 全方位操作與配置技能包 | Universal Google Antigravity (App 2.0, agy CLI, IDE, SDK & Customizations) Skill for Claude Code, OpenAI Codex, OpenCode, and Antigravity agents.",
   "type": "module",
   "bin": {
     "agy-skill": "./bin/cli.mjs"
