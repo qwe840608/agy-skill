@@ -174,17 +174,58 @@ When crafting a prompt for `agy -p`, shape the brief around one of these five pr
 - **Cause**: In headless print mode, inherited shell `cwd` alone does not always attach the workspace.
 - **Fix**: Always pass `--add-dir "<absolute-repo-path>"` on every invocation, including `--continue` / `--conversation` follow-ups.
 
-### 4. Restricted Mode Hardening (`~/.gemini/antigravity-cli/settings.json`)
-- If you cannot use `--dangerously-skip-permissions`, `agy` evaluates permissions in order: **`deny` → `ask` → `allow`**.
-- For restricted read-only evidence gathering, configure global allow rules in `~/.gemini/antigravity-cli/settings.json` for `command(git)`, `command(gh)`, and read utilities (`cat`, `head`, `ls`, `grep`, `find`, `rg`, `wc`), paired with targeted `deny` rules for `command(git push)`, `command(git reset --hard)`, `command(git clean)`, `command(gh pr merge)`, and `command(gh release delete)`. (Note: `search_web` works headlessly without an explicit allow rule.)
+### 4. Least-Privilege Headless Mode Without `--dangerously-skip-permissions` (Safe for Claude Code Auto Mode)
+- **Why**: Claude Code's Auto mode safety classifier blocks commands containing `--dangerously-skip-permissions` under `[Create Unsafe Agents]`. Additionally, in `agy` v1.1.13+, any tool in `-p` mode that requires interactive confirmation is immediately **auto-denied** (`soft-denied`, even if `--remote-control` is passed) with a stderr notice naming the required allow-rule.
+- **How `agy` Evaluates Permissions**:
+  - `toolPermission` in `settings.json` / `--settings` accepts `"request-review"` (default, checks allow/deny rules and execution mode) or `"always-proceed"`.
+  - Under `"toolPermission": "request-review"`, `agy` evaluates `permissions.deny` → `permissions.allow` using 8 validated rule prefixes (`^(command|read_file|write_file|read_url|mcp|execute_url|download_url|unsandboxed)\s*\(.*\)$`):
+    - `command(<exact_prefix>)` — e.g., `command(git status)`, `command(gh pr view)`
+    - `read_file(<absolute_path>)` / `write_file(<absolute_path>)` — e.g., `write_file(C:/work/project)`
+    - `mcp(<server>/<tool_or_*>)` — e.g., `mcp(chrome_devtools/*)` or `mcp(chrome_devtools/take_screenshot)`
+    - `read_url(<domain>)` / `execute_url(<domain>)` / `download_url(<domain>)` — e.g., `execute_url(www.youtube.com)`
+    - `unsandboxed(<command>)`
+  - Passing `--mode accept-edits` with `--add-dir <dir>` automatically approves `write_file` and `edit_file` inside the workspace directory without needing `--dangerously-skip-permissions`.
 
-### 5. Native Stream-JSON Diagnostics (`finished_reason` & `AGY_ERROR`)
+### 5. Headless Browser Automation (`agy -p "/browser ..."`)
+- **Built-in `browser` Subagent**: Although `agy agents` omits `browser` from top-level agents (it runs strictly as a subagent), `-p` mode expands `/browser` by default (unless `--disable-slash-commands` is passed) and instructs the main agent to call `invoke_subagent(TypeName="browser", ...)`.
+- **Available Tools inside `browser` Subagent**: Automatically mounts the built-in `chrome_devtools` MCP server (`mcp_chrome_devtools_list_pages`, `new_page`, `navigate_page`, `take_snapshot`, `take_screenshot` with `filePath` support, `click`, `fill`, `fill_form`, `type_text`, `press_key`, `wait_for`, `evaluate_script`, etc.).
+- **Prerequisite (Chrome Remote Debugging)**: `chrome_devtools` connects to an active Google Chrome instance with Remote Debugging enabled (`chrome://inspect/#remote-debugging` or `chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\temp\agy-chrome-profile"`, which creates `DevToolsActivePort`).
+- **Safe Delegation Example (No `--dangerously-skip-permissions`)**:
+  ```bash
+  agy -p "/browser $(cat brief.md)" \
+    --model gemini-3.8-flash-medium \
+    --mode accept-edits \
+    --sandbox \
+    --settings ./agy-browser-settings.json \
+    --add-dir . \
+    --print-timeout 8m < /dev/null
+  ```
+  Where `agy-browser-settings.json` scopes permissions strictly to the target domain and workspace:
+  ```json
+  {
+    "toolPermission": "request-review",
+    "artifactReviewPolicy": "always-proceed",
+    "permissions": {
+      "allow": [
+        "mcp(chrome_devtools/*)",
+        "execute_url(www.youtube.com)",
+        "execute_url(youtube.com)",
+        "execute_url(consent.youtube.com)",
+        "read_url(www.youtube.com)",
+        "read_url(youtube.com)",
+        "write_file(C:\\Absolute\\Path\\To\\Workspace)"
+      ]
+    }
+  }
+  ```
+
+### 6. Native Stream-JSON Diagnostics (`finished_reason` & `AGY_ERROR`)
 - When using `--output-format stream-json` or `json`:
   - `agy` v1.4.11+ emits `finished_reason` (`print_timeout`, `interrupted`, `error`).
   - `agy` v1.2.6+ emits structured `AGY_ERROR` records containing `status`, `error_code`, `code_kind`, `retryable`, and `error_id`.
   - If `agy` outputs partial response text before hitting `print_timeout`, preserve the partial response and resume the conversation via `--conversation <id>` with a higher `--print-timeout`.
 
-### 6. Wait vs. Poll (Preventing Host Context Explosion)
+### 7. Wait vs. Poll (Preventing Host Context Explosion)
 - Never poll a background `agy` process in a tight sleep loop from Codex or Claude Code—every poll wake-up replays the entire host conversation context and inflates token costs (up to +86% on SWE-bench in Codex).
 - Instead, use background completion notifications or a single long blocking wait (`10m`–`15m`).
 
