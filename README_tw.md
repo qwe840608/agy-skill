@@ -171,7 +171,7 @@ npm run sync
 npm run sync:push
 ```
 
-**發布到 npm**：沒有任何東西會自動發布。要出新版：先改 `package.json` 的 `version`（semver，和 `agy` 版本無關）、commit，然後在能用瀏覽器完成 npm 雙重驗證的終端機執行 `npm publish --access public`。`prepublishOnly` 會先跑測試與打包檢查，壞掉的套件送不出去。發布後在乾淨目錄用 `AGY_SKILL_HOME=<暫存目錄> npx --yes agy-skill@<版本> doctor` 驗證。CI 每次 push 都會跑 `npm publish --dry-run`，打包問題會在發版前浮現。0.1.0 已照這個流程在 Windows 11、Node 26、npm 12 驗證（2026-11-09）。
+**發布到 npm**：沒有任何東西會自動發布。要出新版：先改 `package.json` 的 `version`（semver，和 `agy` 版本無關）、commit，然後在能用瀏覽器完成 npm 雙重驗證的終端機執行 `npm publish --access public`。`prepublishOnly` 會先跑測試與打包檢查，壞掉的套件送不出去。發布後在乾淨目錄用 `AGY_SKILL_HOME=<暫存目錄> npx --yes agy-skill@<版本> doctor` 驗證。CI 每次 push 都會跑 `npm run pack:check`（`npm pack --dry-run` 加檔案清單比對），打包問題會在發版前浮現；`npm publish --dry-run` 只在版本尚未發布時有用，已發布的版本 npm 會直接拒絕。0.1.0 已照這個流程在 Windows 11、Node 26、npm 12 驗證（2026-11-09）。
 
 ---
 

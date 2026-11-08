@@ -23,10 +23,8 @@ jobs:
         run: node --check bin/cli.mjs
       - name: Installer / doctor / uninstall / sync tests
         run: npm test
-      - name: Package contents check
+      - name: Package contents check (npm pack --dry-run)
         run: npm run pack:check
-      - name: Publish dry-run (no credentials needed)
-        run: npm publish --dry-run --access public --ignore-scripts
       - name: Smoke-install into a scratch home
         shell: bash
         run: |

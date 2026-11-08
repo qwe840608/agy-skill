@@ -171,7 +171,7 @@ This queries the local `agy` (`--version`, `--help`, `help <sub>`, `models`, `ch
 npm run sync:push
 ```
 
-**Releasing to npm**: nothing publishes automatically. To cut a release, bump `version` in `package.json` (semver, independent of the `agy` version), commit, then run `npm publish --access public` from a terminal where you can complete npm's two-factor prompt in the browser. `prepublishOnly` runs the tests and the pack check first, so a broken package cannot ship. After publishing, verify from a clean directory with `AGY_SKILL_HOME=<scratch> npx --yes agy-skill@<version> doctor`. CI runs `npm publish --dry-run` on every push so packaging problems surface before release day. The 0.1.0 release was verified this way on Windows 11, Node 26, npm 12 (2026-11-09).
+**Releasing to npm**: nothing publishes automatically. To cut a release, bump `version` in `package.json` (semver, independent of the `agy` version), commit, then run `npm publish --access public` from a terminal where you can complete npm's two-factor prompt in the browser. `prepublishOnly` runs the tests and the pack check first, so a broken package cannot ship. After publishing, verify from a clean directory with `AGY_SKILL_HOME=<scratch> npx --yes agy-skill@<version> doctor`. CI runs `npm run pack:check` (`npm pack --dry-run` plus a file-list assertion) on every push so packaging problems surface before release day; `npm publish --dry-run` itself is only useful before a version is published, since npm rejects it for an already-released version. The 0.1.0 release was verified this way on Windows 11, Node 26, npm 12 (2026-11-09).
 
 ---
 
