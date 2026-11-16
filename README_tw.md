@@ -86,13 +86,15 @@ npx --yes --allow-git=all github:qwe840608/agy-skill
 
 三種情況共通：不用 `--dangerously-skip-permissions`、權限來自明確的允許清單、exit code 0 不當作成功的證明。允許清單由 `agy` 執行；「先問你」這條線靠 agent 照指示做。完整技術細節在 [SKILL.md](SKILL.md)。
 
+在 agy 1.5.9 實測到兩個缺口（Windows 11，2026-11-16）：除了工作資料夾，`agy` 還讀得到（寫檔任務則也寫得進）「執行指令時所在的資料夾」和系統暫存資料夾底下的檔案，即使這兩處都不在允許清單上。所以這個 skill 會要 agent 從工作資料夾裡面啟動 `agy`；任務執行期間，不要把敏感資料放在暫存資料夾。我們試過的其他資料夾，讀寫都有照表格被擋下。
+
 ---
 
 ## 測過的環境
 
 | | 安裝／doctor／移除 | 唯讀任務 | 寫檔 | Chrome 任務 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Claude Code，Windows 11** | ✅ 2026-11-09，agy 1.5.3 | ✅ 2026-11-09，agy 1.5.3 | ✅ 2026-11-09，agy 1.5.3 | ✅ 2026-11-09，agy 1.5.3，Chrome 157 |
+| **Claude Code，Windows 11** | ✅ 2026-11-16，agy 1.5.9 | ✅ 2026-11-16，agy 1.5.9 | ✅ 2026-11-16，agy 1.5.9 | ✅ 2026-11-09，agy 1.5.3，Chrome 157 |
 | **Antigravity／Codex／OpenCode，Windows 11** | ✅ 只測安裝，2026-11-09 | 未測 | 未測 | 未測 |
 | **macOS、Linux（任何 agent）** | 🤖 僅 CI 安裝器測試 | 未測 | 未測 | 未測 |
 

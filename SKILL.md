@@ -41,7 +41,7 @@ Put every input file in one working folder `$DIR` (absolute path; on Windows use
 
 ```bash
 DIR="/absolute/path/to/workdir"
-"$AGY" -p "Do not run any terminal commands; only use your file-viewing tools. <task>" \
+cd "$DIR" && "$AGY" -p "Do not run any terminal commands; only use your file-viewing tools. <task>" \
   --model gemini-3.8-flash-medium \
   --mode plan --sandbox \
   --add-dir "$DIR" \
@@ -53,7 +53,7 @@ DIR="/absolute/path/to/workdir"
 
 **Structured output**: add `--output-format json` (optionally `--json-schema '<schema or path>'`) when the host agent needs to parse the answer.
 
-Verified on agy v1.5.3, Windows 11, Claude Code auto mode (2026-11-09): both forms ran without being blocked by the host.
+Verified on agy v1.5.9, Windows 11, Claude Code auto mode (2026-11-16): both forms ran without being blocked by the host.
 
 ## 2. Browser Tasks (Google Chrome Only)
 
@@ -65,7 +65,7 @@ Workflow: the host agent writes a step list (URL, what to click/type, what to re
 
 ```bash
 DIR="/absolute/path/to/workdir"   # contains brief.md and settings.json
-"$AGY" -p "/browser Do not run any terminal commands. Save screenshots under $DIR.
+cd "$DIR" && "$AGY" -p "/browser Do not run any terminal commands. Save screenshots under $DIR.
 
 $(cat "$DIR/brief.md")" \
   --model gemini-3.8-flash-medium \
@@ -93,15 +93,17 @@ Verified on agy v1.5.3 + Chrome 157, Windows 11 (2026-11-09): a YouTube search t
 
 ## 3. Five Rules That Prevent Silent Failures
 
-1. **Close stdin**: always end with `</dev/null` (PowerShell: `< NUL` via `cmd /c`). An open stdin pipe makes `agy -p` hang forever at 0% CPU.
-2. **Always `--add-dir "$DIR"`**: otherwise agy may run in `~/.gemini/antigravity-cli/scratch` and not see your files.
-3. **Never use `--dangerously-skip-permissions`**: Claude Code's auto mode blocks it as an unsafe agent, and it is not needed. Use the `--settings` allowlist above. In `-p` mode any tool not on the allowlist is auto-denied, and stderr names the rule you would need (e.g. `command(...)`).
-4. **Say "Do not run any terminal commands"** in the prompt unless you allowed a specific `command(<prefix>)`; otherwise Gemini may try a shell command and the run ends with no output.
+1. **Close stdin**: always end with `</dev/null` (PowerShell: `< NUL` via `cmd /c`). An open stdin pipe has made `agy -p` hang forever at 0% CPU. Not reproduced on agy 1.5.9 (2026-11-16: with a pipe held open for 60 s the run finished in 6 s), but closing stdin costs nothing.
+2. **Always `--add-dir "$DIR"`**: otherwise agy may run in `~/.gemini/antigravity-cli/scratch` and not see your files. **Start agy from inside `$DIR`** (the `cd "$DIR" &&` in the commands above): agy also treats the directory it is started from as a workspace. On agy 1.5.9 (tested 2026-11-16) files there were readable in `plan` mode and writable in `accept-edits` mode with no allow rule, so never start it from a repo or home folder you do not mean to expose.
+3. **Never use `--dangerously-skip-permissions`**: Claude Code's auto mode blocks it as an unsafe agent, and it is not needed. Use the `--settings` allowlist above. In `-p` mode a tool call that needs approval and is not on the allowlist is auto-denied, and stderr names the rule you would need (e.g. `command(<target>)`). The same notice suggests re-running with `--dangerously-skip-permissions`; ignore that and add the narrow rule. One gap: files under the OS temp folder (tested with Windows `%TEMP%` on agy 1.5.9, 2026-11-16) were readable and writable with no rule, so do not count on the allowlist to protect anything stored there.
+4. **Say "Do not run any terminal commands"** in the prompt unless you allowed a specific `command(...)` rule (Section 4); otherwise Gemini may try a shell command and the run ends with no output.
 5. **Check, don't trust**: exit code 0 can still mean "no output produced". Read `agy-err.txt`, open the produced files yourself, and verify facts before passing results to the user.
 
 ## 4. Allowlist Rule Format
 
 `permissions.allow` / `permissions.deny` entries must match `command(...)`, `read_file(...)`, `write_file(...)`, `read_url(...)`, `execute_url(...)`, `download_url(...)`, `mcp(...)`, or `unsandboxed(...)`. Grant the narrowest path or domain that works. Never allow `read_file` on `~/.gemini` (it holds OAuth tokens).
+
+On Windows a `command(...)` rule must equal the whole command (agy 1.5.8 changelog: PowerShell and cmd need an exact match). Tested on agy 1.5.9 (2026-11-16): `command(git --version)` allowed `git --version`; `command(git)` did not, and `command(git --version)` did not allow `git --version --build-options`.
 
 ## 5. More Detail
 

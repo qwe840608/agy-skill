@@ -86,13 +86,15 @@ Four ready-made examples with the exact prompts: [references/examples.md](refere
 
 In every case: no `--dangerously-skip-permissions`, permissions come from an explicit allowlist, and exit code 0 is never taken as proof of success. The allowlist is enforced by `agy`; the "ask you first" line is enforced by your agent following these instructions. Full technical detail is in [SKILL.md](SKILL.md).
 
+Two gaps measured on agy 1.5.9 (Windows 11, 2026-11-16): besides the working folder, `agy` could read (and, in a writing task, write) files in the folder the command was started from and under the system temp folder, although neither was on the allowlist. The skill therefore tells the agent to start `agy` from inside the working folder; do not keep anything sensitive in the temp folder while a task runs. Reads and writes in the other folders we tried were blocked as the table says.
+
 ---
 
 ## Tested on
 
 | | Install / doctor / uninstall | Read-only task | Writes files | Chrome task |
 | :--- | :--- | :--- | :--- | :--- |
-| **Claude Code, Windows 11** | ✅ 2026-11-09, agy 1.5.3 | ✅ 2026-11-09, agy 1.5.3 | ✅ 2026-11-09, agy 1.5.3 | ✅ 2026-11-09, agy 1.5.3, Chrome 157 |
+| **Claude Code, Windows 11** | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-09, agy 1.5.3, Chrome 157 |
 | **Antigravity / Codex / OpenCode, Windows 11** | ✅ install only, 2026-11-09 | untested | untested | untested |
 | **macOS, Linux (any agent)** | 🤖 CI installer tests only | untested | untested | untested |
 

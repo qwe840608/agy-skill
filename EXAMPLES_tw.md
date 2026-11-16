@@ -7,7 +7,7 @@
 每個範例共同的流程：
 
 1. 建立 `$DIR`，把輸入檔複製進去，寫好任務簡報。
-2. 執行 `agy`，允許清單只涵蓋 `$DIR`（瀏覽器任務再加上指定的 Chrome 工具與網域）。
+2. 從 `$DIR` 裡面執行 `agy`（每個指令開頭的 `cd "$DIR" &&`），允許清單只涵蓋 `$DIR`（瀏覽器任務再加上指定的 Chrome 工具與網域）。
 3. 自己先讀 `$DIR/agy-err.txt` 和產出的檔案，確認無誤才回報使用者。
 
 ---
@@ -20,7 +20,7 @@
 
 ```bash
 DIR="/absolute/path/to/workdir"          # 內含 clip.mp4（或 photo.jpg、voice.m4a）
-"$AGY" -p "Do not run any terminal commands; only use your file-viewing tools.
+cd "$DIR" && "$AGY" -p "Do not run any terminal commands; only use your file-viewing tools.
 Watch clip.mp4 in the workspace. Reply in this order:
 1. One-paragraph summary.
 2. Timestamped list of scene changes (mm:ss - what happens).
@@ -47,7 +47,7 @@ If you cannot open the file, say so and stop." \
 
 ```bash
 DIR="/absolute/path/to/workdir"          # 內含 change.patch 或 plan.md
-"$AGY" -p "Do not run any terminal commands; only use your file-viewing tools.
+cd "$DIR" && "$AGY" -p "Do not run any terminal commands; only use your file-viewing tools.
 Review change.patch in the workspace as an independent reviewer.
 Report findings ranked by severity. For each: file and line, what breaks, how to fix.
 Separate 'observed in the diff' from 'inferred'. End with an 'Unverified' section.
@@ -71,11 +71,11 @@ Do not propose rewrites of code you have not seen." \
 
 **適用**：使用者要一份文字草稿（貼文、大綱）或一張生成圖，而且要存成檔案。
 
-**權限**：`read_file($DIR)` 加 `write_file($DIR)`；用 `--mode accept-edits` 讓 `$DIR` 內的寫檔自動通過。`$DIR` 以外都不可寫。
+**權限**：`read_file($DIR)` 加 `write_file($DIR)`；用 `--mode accept-edits` 讓 `$DIR` 內的寫檔自動通過。其他資料夾不可寫，但在 agy 1.5.9 實測到兩個例外（2026-11-16）：啟動 `agy` 時所在的資料夾（所以指令開頭要 `cd "$DIR"`）和系統暫存資料夾。
 
 ```bash
 DIR="/absolute/path/to/workdir"          # 內含 notes.md（素材）
-"$AGY" -p "Do not run any terminal commands; use only file tools.
+cd "$DIR" && "$AGY" -p "Do not run any terminal commands; use only file tools.
 Read notes.md. Write a 150-200 word plain-text draft post in Traditional Chinese
 to $DIR/draft.txt. Do not invent facts that are not in notes.md.
 Then reply with the list of claims you were unsure about." \
@@ -126,7 +126,7 @@ Then reply with the list of claims you were unsure about." \
 
 ```bash
 DIR="/absolute/path/to/workdir"
-"$AGY" -p "/browser Do not run any terminal commands. Save screenshots under $DIR.
+cd "$DIR" && "$AGY" -p "/browser Do not run any terminal commands. Save screenshots under $DIR.
 
 $(cat "$DIR/brief.md")" \
   --model gemini-3.8-flash-medium \

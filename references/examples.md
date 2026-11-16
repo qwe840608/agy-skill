@@ -5,7 +5,7 @@ Four end-to-end examples a host agent can paste and adapt. All of them assume th
 Common pattern for every example:
 
 1. Create `$DIR`, copy the inputs into it, and write the brief.
-2. Run `agy` with an allowlist that covers only `$DIR` (plus, for browser work, the named Chrome tools and domains).
+2. Run `agy` from inside `$DIR` (the `cd "$DIR" &&` in each command) with an allowlist that covers only `$DIR` (plus, for browser work, the named Chrome tools and domains).
 3. Read `$DIR/agy-err.txt` and the produced files yourself before telling the user anything.
 
 ---
@@ -18,7 +18,7 @@ Common pattern for every example:
 
 ```bash
 DIR="/absolute/path/to/workdir"          # contains clip.mp4 (or photo.jpg, voice.m4a)
-"$AGY" -p "Do not run any terminal commands; only use your file-viewing tools.
+cd "$DIR" && "$AGY" -p "Do not run any terminal commands; only use your file-viewing tools.
 Watch clip.mp4 in the workspace. Reply in this order:
 1. One-paragraph summary.
 2. Timestamped list of scene changes (mm:ss - what happens).
@@ -45,7 +45,7 @@ If you cannot open the file, say so and stop." \
 
 ```bash
 DIR="/absolute/path/to/workdir"          # contains change.patch and/or plan.md
-"$AGY" -p "Do not run any terminal commands; only use your file-viewing tools.
+cd "$DIR" && "$AGY" -p "Do not run any terminal commands; only use your file-viewing tools.
 Review change.patch in the workspace as an independent reviewer.
 Report findings ranked by severity. For each: file and line, what breaks, how to fix.
 Separate 'observed in the diff' from 'inferred'. End with an 'Unverified' section.
@@ -69,11 +69,11 @@ For a plan review, swap the brief: "Challenge the assumptions in plan.md: list e
 
 **When**: the user wants a text draft (post, outline) or a generated image, and wants the file on disk.
 
-**Permissions**: `read_file($DIR)` and `write_file($DIR)`; `--mode accept-edits` so file writes inside `$DIR` are accepted. Nothing outside `$DIR` is writable.
+**Permissions**: `read_file($DIR)` and `write_file($DIR)`; `--mode accept-edits` so file writes inside `$DIR` are accepted. Other folders are not writable, with two exceptions measured on agy 1.5.9 (2026-11-16): the folder `agy` is started from (hence the `cd "$DIR"`) and the OS temp folder.
 
 ```bash
 DIR="/absolute/path/to/workdir"          # contains notes.md with the source material
-"$AGY" -p "Do not run any terminal commands; use only file tools.
+cd "$DIR" && "$AGY" -p "Do not run any terminal commands; use only file tools.
 Read notes.md. Write a 150-200 word plain-text draft post in Traditional Chinese
 to $DIR/draft.txt. Do not invent facts that are not in notes.md.
 Then reply with the list of claims you were unsure about." \
@@ -124,7 +124,7 @@ Image variant (same flags): `"Use generate_image to create a 1024x1024 flat-styl
 
 ```bash
 DIR="/absolute/path/to/workdir"
-"$AGY" -p "/browser Do not run any terminal commands. Save screenshots under $DIR.
+cd "$DIR" && "$AGY" -p "/browser Do not run any terminal commands. Save screenshots under $DIR.
 
 $(cat "$DIR/brief.md")" \
   --model gemini-3.8-flash-medium \

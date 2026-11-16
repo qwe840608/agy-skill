@@ -1,6 +1,6 @@
 # Antigravity CLI (`agy`) & Headless Agent Orchestration
 
-This reference covers the Antigravity CLI (`agy` v1.5.3) in more depth than `SKILL.md`: flags, subcommands, headless use from external agents (Claude Code, OpenAI Codex, OpenCode, CI pipelines), two ways to split work between host and `agy`, structured JSON/NDJSON output, the Agent Client Protocol (`agy acp`), and troubleshooting. Exact flag text comes from `agy --help`; see `version-snapshot.md` for the verbatim output on this machine.
+This reference covers the Antigravity CLI (`agy` v1.5.9: the flag and subcommand lists match `agy --help`, and Section 5 items 1, 3 and 4 were re-tested on Windows 11 on 2026-11-16; the other sections were last checked on v1.5.3) in more depth than `SKILL.md`: flags, subcommands, headless use from external agents (Claude Code, OpenAI Codex, OpenCode, CI pipelines), two ways to split work between host and `agy`, structured JSON/NDJSON output, the Agent Client Protocol (`agy acp`), and troubleshooting. Exact flag text comes from `agy --help`; see `version-snapshot.md` for the verbatim output on this machine.
 
 ---
 
@@ -65,7 +65,7 @@ Run `agy [flags]` to start an interactive session or execute a non-interactive t
 
 | Flag | Description |
 | :--- | :--- |
-| `--sandbox` | Run in a sandbox with terminal restrictions enabled. |
+| `--sandbox` | Run in a sandbox with terminal restrictions enabled. Where the OS sandbox is missing, the flag is accepted and the run continues without it; the only sign is a `Terminal sandbox unavailable` warning in the agy log under `~/.gemini/antigravity-cli/log/` (seen with agy 1.5.9 on Windows 11 build 26200, 2026-11-16), so do not treat it as the only guard. |
 | `--dangerously-skip-permissions` | Auto-approve all tool permission requests without prompting (since v1.5.2, commands on the system denylist are still blocked). **Not recommended and not needed**: Claude Code's auto mode blocks commands containing it, and the `--settings` allowlist (Section 5.4) achieves the same without granting everything. |
 | `--settings <json-or-path>` | Ephemeral settings for this session only (never saved to disk): pass an inline JSON object of `settings.json` keys or a file path. |
 | `--log-file <path>` | Override the CLI log file path. |
@@ -160,9 +160,9 @@ These five "personas" are conventions of this skill, not `agy` features: they ar
 ## 5. Production Troubleshooting & Edge Cases
 
 ### 1. Job Hangs Forever with 0% CPU and Empty Log
-- **Cause A (Open `stdin` Pipe)**: `agy` waits indefinitely on open `stdin` pipes in non-interactive shells.
+- **Cause A (Open `stdin` Pipe)**: `agy` has waited indefinitely on open `stdin` pipes in non-interactive shells. Not reproduced on agy 1.5.9 (2026-11-16, Git Bash on Windows 11: with stdin held open by a pipe for 60 s the run finished in 6 s), so on newer versions check Cause B first.
   - **Fix**: Always append `</dev/null` (POSIX) or run via `cmd /c '... < NUL'` (Windows PowerShell).
-- **Cause B (Permission Auto-Denial)**: In `-p` mode, any tool not covered by `permissions.allow` is auto-denied and the run ends with `no output produced` (exit code may still be 0).
+- **Cause B (Permission Auto-Denial)**: In `-p` mode, a tool call that needs approval and is not covered by `permissions.allow` is auto-denied and the run ends with `no output produced` on stderr and an empty stdout (exit code may still be 0; it was 0 in every denied run on agy 1.5.9, 2026-11-16).
   - **Fix**: Pass `--settings` with `"toolPermission": "request-review"` and narrow allow rules (see Subsection 4), and tell agy not to run terminal commands unless a `command(...)` rule allows them. Avoid `--dangerously-skip-permissions`; Claude Code blocks it.
 - **Note on Output Buffering**: In plain `text` print mode (`-p`), `agy` buffers most output until the turn finishes. A silent log for 5–10 minutes while CPU/child processes are active is normal. Use `--output-format stream-json` if you need live step-by-step event streaming.
 
@@ -173,18 +173,21 @@ These five "personas" are conventions of this skill, not `agy` features: they ar
 ### 3. `agy -p` Runs in `~/.gemini/antigravity-cli/scratch` Instead of the Repo
 - **Cause**: In headless print mode, inherited shell `cwd` alone does not always attach the workspace.
 - **Fix**: Always pass `--add-dir "<absolute-repo-path>"` on every invocation, including `--continue` / `--conversation` follow-ups.
+- **Start directory is a workspace too (agy 1.5.9, tested 2026-11-16)**: the directory `agy` was started from was attached as a workspace in every run (the agy log lists it first in `workspaceDirs`), and a run without `--add-dir` started inside the folder saw its files. That directory was then readable in `plan` mode and writable in `accept-edits` mode with no allow rule, so start `agy` from inside the working folder, not from a repo you do not mean to expose.
 
 ### 4. Least-Privilege Headless Mode Without `--dangerously-skip-permissions` (Safe for Claude Code Auto Mode)
-- **Why**: Claude Code's auto mode safety classifier blocks commands containing `--dangerously-skip-permissions` (reported as creating an unsafe agent). Independently, in `-p` mode any tool call that would need interactive confirmation is **auto-denied** with a stderr notice naming the allow-rule you would need (observed on agy v1.5.3, 2026-11-09; the `agy changelog` entry for 1.5.2 describes the same behaviour for enterprise-reviewed tools).
+- **Why**: Claude Code's auto mode safety classifier blocks commands containing `--dangerously-skip-permissions` (reported as creating an unsafe agent). Independently, in `-p` mode any tool call that would need interactive confirmation is **auto-denied** with a stderr notice naming the allow-rule you would need (observed on agy v1.5.3, 2026-11-09, and again on v1.5.9, 2026-11-16, for `command`, `read_file` and `write_file`; the `agy changelog` entry for 1.5.2 describes the same behaviour for enterprise-reviewed tools). The v1.5.9 notice reads: `jetski: no output produced — a tool required the "command" permission that headless mode cannot prompt for, so it was auto-denied. Add an allow-rule under permissions.allow in settings.json (e.g. command(<target>)). Alternatively, re-run with --dangerously-skip-permissions to auto-approve all tools.` Do not follow its last sentence; add the narrow allow rule instead.
+- **Always pass `--mode`**: since agy 1.5.7 a run without `--mode` starts in `auto` where Auto mode is available (`agy changelog`). On the Windows 11 test machine (agy 1.5.9, 2026-11-16) the agy log showed `auto mode is unavailable because the terminal sandbox is unavailable, falling back to default`, and an unlisted command was still auto-denied; behaviour on a machine where Auto mode is available was not tested.
 - **How `agy` Evaluates Permissions**:
   - `toolPermission` in `settings.json` / `--settings` accepts `"request-review"` (default, checks allow/deny rules and execution mode) or `"always-proceed"`.
   - Under `"toolPermission": "request-review"`, `agy` evaluates `permissions.deny` → `permissions.allow` using 8 validated rule prefixes (`^(command|read_file|write_file|read_url|mcp|execute_url|download_url|unsandboxed)\s*\(.*\)$`):
-    - `command(<exact_prefix>)` — e.g., `command(git status)`, `command(gh pr view)`
+    - `command(<command>)` — e.g., `command(git status)`. On Windows (PowerShell/cmd) the rule must equal the whole command since agy 1.5.8 (`agy changelog`). Tested on agy 1.5.9 (2026-11-16): `command(git --version)` allowed `git --version`; `command(git)` did not, and `command(git --version)` did not allow `git --version --build-options`. Prefix matching on POSIX shells was not re-tested.
     - `read_file(<absolute_path>)` / `write_file(<absolute_path>)` — e.g., `write_file(C:/work/project)`
     - `mcp(<server>/<tool_or_*>)` — e.g., `mcp(chrome_devtools/*)` or `mcp(chrome_devtools/take_screenshot)`
     - `read_url(<domain>)` / `execute_url(<domain>)` / `download_url(<domain>)` — e.g., `execute_url(www.youtube.com)`
     - `unsandboxed(<command>)`
-  - Passing `--mode accept-edits` with `--add-dir <dir>` automatically approves `write_file` and `edit_file` inside the workspace directory without needing `--dangerously-skip-permissions`.
+  - Passing `--mode accept-edits` with `--add-dir <dir>` automatically approves `write_file` and `edit_file` inside the workspace directory without needing `--dangerously-skip-permissions` (re-tested on agy 1.5.9, 2026-11-16: the write succeeded with no `write_file` rule).
+  - **What the allowlist did not stop (agy 1.5.9, Windows 11, 2026-11-16)**: with only `read_file(<dir>)` / `write_file(<dir>)` allowed, reads and writes in a sibling folder and outside the home folder, and a read elsewhere under `AppData/Local`, were auto-denied, but two places were open with no rule: the directory `agy` was started from (see item 3) and the OS temp folder (`%TEMP%`; a folder under it was readable in `plan` mode and writable in `accept-edits` and default mode, even with `"allowNonWorkspaceAccess": false` in `--settings`). A `permissions.deny` entry `write_file(<folder>)` did block a write to that temp folder.
 
 ### 5. Browser Tasks (`agy -p "/browser ..."`, Google Chrome Only)
 - `/browser` invokes the built-in `browser` subagent, which mounts the `chrome_devtools` MCP (`list_pages`, `new_page`, `navigate_page`, `take_snapshot`, `take_screenshot` with `filePath`, `click`, `fill`, `type_text`, `press_key`, `wait_for`, `evaluate_script`, ...).
