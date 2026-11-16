@@ -72,6 +72,7 @@ Release log:
 | :--- | :--- | :--- |
 | 0.1.0 | 2026-11-09 | Windows 11, Node 26, npm 12; `npx --yes agy-skill@0.1.0 install/doctor/uninstall` in a scratch home |
 | 0.1.1 | 2026-11-16 | Windows 11, Node 26, npm 12; `npx --yes agy-skill@0.1.1 install/doctor/uninstall` in a scratch home; the 13 published files match the repo |
+| 0.1.2 | 2026-11-16 | Windows 11, Node 26, npm 12; `npx --yes agy-skill@0.1.2 install/doctor/uninstall` in a scratch home; the 13 published files match the repo |
 
 ## Two-language documents
 
