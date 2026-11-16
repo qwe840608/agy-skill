@@ -35,7 +35,7 @@ PowerShell: the same flags work, but close stdin with `cmd /c "agy ... < NUL"` i
 
 ## 1. The Standard Command
 
-Put every input file in one working folder `$DIR` (absolute path; on Windows use forward slashes, e.g. `C:/work/job1`). Default model: `gemini-3.8-flash-medium`. Run `"$AGY" models` for the current list.
+Put every input file in one working folder `$DIR` (absolute path; on Windows use forward slashes, e.g. `C:/work/job1`). Default model: `gemini-3.8-flash-medium`; for recognizing images and video use `gemini-4-hydrogen-medium` instead (swap it into the `--model` flag of the examples below). Run `"$AGY" models` for the current list.
 
 **Read-only** (look at files, answer in stdout):
 
