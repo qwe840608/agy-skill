@@ -98,7 +98,7 @@ Then reply with the list of claims you were unsure about." \
 
 **適用**：使用者要在已登入的網站上查或讀某些東西，而 host agent 沒有自己的瀏覽器。
 
-**執行前**：使用者（不是 agent）已在 `chrome://inspect/#remote-debugging` 開過一次遠端偵錯、Chrome 正在執行、使用者已同意這個具體任務，而且人在電腦前，Chrome 跳出「Allow remote debugging?」時可以按。
+**執行前**：使用者（不是 agent）已在 `chrome://inspect/#remote-debugging` 開過一次遠端偵錯、Chrome 正在執行、使用者已同意這個具體任務，而且人在電腦前：agy 每次連線，Chrome 都會跳出「Allow remote debugging?」，要由使用者按。
 
 **權限**：`$DIR` 的 `read_file`／`write_file`，再加上 `deny` 清單，把任務用不到的瀏覽器工具都擋掉。在 agy 1.5.9 上，光靠允許清單擋不住瀏覽器（沒列出的工具照樣能用），也沒有任何規則能限制它開哪些網站（2026-11-16 實測），所以「只能開哪個網站」要寫在任務簡報裡，再用截圖核對。這個任務要在搜尋框打字，所以 `fill`、`type_text`、`press_key` 保留；`click` 和 `evaluate_script` 擋掉。
 
@@ -138,8 +138,8 @@ $(cat "$DIR/brief.md")" \
 
 **預期產出**：`$DIR/result.png` 與 `$DIR/agy-out.txt` 裡的清單。
 
-**驗證**：打開截圖，逐步對照簡報；把讀回的清單和截圖比對。只回報截圖能證實的內容。如果 `agy-out.txt` 裡沒有清單、只寫著在等瀏覽器子代理，表示有工具被拒絕：加上 `--output-format json` 重跑，看 `denied_actions`。
+**驗證**：打開截圖，逐步對照簡報；把讀回的清單和截圖比對。只回報截圖能證實的內容。如果 `agy-out.txt` 裡沒有清單、只寫著在等瀏覽器子代理，表示有個既沒允許也沒禁止的工具被拒絕：加上 `--output-format json` 重跑，看 `denied_actions`。
 
-**實測範圍**：在 agy 1.5.9 + Chrome 157（2026-11-16）用 SKILL.md 第 2 節的唯讀設定重跑過「開頁面、截圖、讀回內容」這幾步。「打字搜尋」這一步最後一次實測是 agy 1.5.3（2026-11-09）。
+**實測範圍**：在 agy 1.5.9 + Chrome 157（2026-11-16）照這個範例的指令與設定原文，在維基百科搜尋頁、Google 搜尋、YouTube 實測過：用 `fill` 輸入關鍵字、用 `press_key` 送出，每張截圖都看得到搜尋框裡的關鍵字與結果頁。Facebook 和 Instagram 沒有測到，因為 Chrome 上這兩個站沒有登入，agy 停在登入頁。把 `fill`、`type_text`、`press_key` 加進 `deny` 之後，三個呼叫都被拒絕，搜尋框維持空白。
 
 **遇到以下任何一步，先停下來問使用者**：登入、輸入密碼或付款資料、送出表單、發文、購買、刪除。這些永遠不派給 agy。

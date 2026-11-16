@@ -88,7 +88,7 @@ In every case: no `--dangerously-skip-permissions`, permissions come from an exp
 
 Two gaps measured on agy 1.5.9 (Windows 11, 2026-11-16): besides the working folder, `agy` could read (and, in a writing task, write) files in the folder the command was started from and under the system temp folder, although neither was on the allowlist. The skill therefore tells the agent to start `agy` from inside the working folder; do not keep anything sensitive in the temp folder while a task runs. Reads and writes in the other folders we tried were blocked as the table says.
 
-Browser tasks, measured on agy 1.5.9 + Chrome 157 (Windows 11, 2026-11-16): `agy` does not limit which websites the browser opens, so "stay on this site" is an instruction your agent writes into the task and checks on the screenshot, not something `agy` enforces. Blocking a tool (we tested clicking) did work. Chrome may ask you to click **Allow** when `agy` connects, so a browser task needs you at the computer, and `agy` keeps a screen recording of the session under `~/.gemini/antigravity-cli/brain/`.
+Browser tasks, measured on agy 1.5.9 + Chrome 157 (Windows 11, 2026-11-16): `agy` does not limit which websites the browser opens, so "stay on this site" is an instruction your agent writes into the task and checks on the screenshot, not something `agy` enforces. Blocking a tool did work (tested with clicking, typing, key presses and page scripts). Chrome asks you to click **Allow** every time `agy` connects, so a browser task needs you at the computer, and `agy` keeps a screen recording of the session under `~/.gemini/antigravity-cli/brain/`.
 
 ---
 
@@ -96,7 +96,7 @@ Browser tasks, measured on agy 1.5.9 + Chrome 157 (Windows 11, 2026-11-16): `agy
 
 | | Install / doctor / uninstall | Read-only task | Writes files | Chrome task |
 | :--- | :--- | :--- | :--- | :--- |
-| **Claude Code, Windows 11** | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9, Chrome 157 (open a page, screenshot, read back); typing into a page last run 2026-11-09, agy 1.5.3 |
+| **Claude Code, Windows 11** | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9, Chrome 157 (open a page, type a search, screenshot, read back) |
 | **Antigravity / Codex / OpenCode, Windows 11** | ✅ install only, 2026-11-09 | untested | untested | untested |
 | **macOS, Linux (any agent)** | 🤖 CI installer tests only | untested | untested | untested |
 

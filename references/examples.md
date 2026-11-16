@@ -96,7 +96,7 @@ Image variant (same flags): `"Use generate_image to create a 1024x1024 flat-styl
 
 **When**: the user wants something looked up or read on a site they are already signed in to, and the host agent has no browser of its own.
 
-**Before running**: the user (not the agent) has enabled remote debugging once at `chrome://inspect/#remote-debugging`, Chrome is open, the user has approved this specific task, and the user is at the computer to click Chrome's `Allow remote debugging?` dialog if it appears.
+**Before running**: the user (not the agent) has enabled remote debugging once at `chrome://inspect/#remote-debugging`, Chrome is open, the user has approved this specific task, and the user is at the computer to click Chrome's `Allow remote debugging?` dialog, which appears every time agy connects.
 
 **Permissions**: `read_file`/`write_file` on `$DIR`, plus a `deny` entry for every browser tool the task does not need. On agy 1.5.9 the allow list alone did not confine the browser (tools that were not listed still ran) and no rule limited which sites it opened (tested 2026-11-16), so the site limit is written in the brief and checked on the screenshot. This task types into a search box, so `fill`, `type_text` and `press_key` stay available; `click` and `evaluate_script` are denied.
 
@@ -136,8 +136,8 @@ $(cat "$DIR/brief.md")" \
 
 **Expected output**: `$DIR/result.png` and the list in `$DIR/agy-out.txt`.
 
-**Verify**: open the screenshot and compare it with the brief step by step; check the read-back list against the screenshot. Report to the user only what the screenshot confirms. If `agy-out.txt` has no list and only says it is waiting for the browser subagent, a tool was refused: re-run with `--output-format json` and read `denied_actions`.
+**Verify**: open the screenshot and compare it with the brief step by step; check the read-back list against the screenshot. Report to the user only what the screenshot confirms. If `agy-out.txt` has no list and only says it is waiting for the browser subagent, a tool with no allow or deny rule was refused: re-run with `--output-format json` and read `denied_actions`.
 
-**Tested**: on agy 1.5.9 + Chrome 157 (2026-11-16) the open-page, screenshot and read-back steps were re-run with the read-only settings in SKILL.md Section 2. The type-and-search step was last run on agy 1.5.3 (2026-11-09).
+**Tested**: on agy 1.5.9 + Chrome 157 (2026-11-16) this example's command and settings ran as printed against Wikipedia's search page, Google Search and YouTube: the query was typed with `fill` and submitted with `press_key`, and each screenshot shows the query in the search box and the results page. Facebook and Instagram were not tested because Chrome was signed out of both; agy stopped at the login page. With `fill`, `type_text` and `press_key` added to `deny`, all three calls were refused and the search box stayed empty.
 
 **Stop and ask the user** before any step that would sign in, enter a password or payment detail, submit a form, post, buy, or delete. These are never delegated.

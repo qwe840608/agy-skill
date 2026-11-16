@@ -61,7 +61,7 @@ Verified on agy v1.5.9, Windows 11, Claude Code auto mode (2026-11-16): both for
 
 One-time setup by the user (not the agent): open Chrome, go to `chrome://inspect/#remote-debugging`, turn on remote debugging. Check it is on: a `DevToolsActivePort` file exists in Chrome's user-data folder (Windows: `$LOCALAPPDATA/Google/Chrome/User Data/`; macOS: `~/Library/Application Support/Google/Chrome/`; Linux: `~/.config/google-chrome/`).
 
-The user must be at the computer: Chrome can show an `Allow remote debugging?` dialog when agy connects, and only the user clicks it. In two runs on agy 1.5.9 where nobody did (2026-11-16), agy gave up after 3 to 4.5 minutes with exit code 0 and an empty stderr.
+The user must be at the computer: Chrome shows an `Allow remote debugging?` dialog every time agy connects (every run on agy 1.5.9 + Chrome 157, 2026-11-16), and only the user clicks it. In two runs where nobody did, agy gave up after 3 to 4.5 minutes with exit code 0 and an empty stderr.
 
 Workflow: the host agent writes a step list (URL, what to click/type, what to read back, where to stop) into `$DIR/brief.md`, runs agy, then verifies the screenshot and report itself before telling the user.
 
@@ -77,7 +77,7 @@ $(cat "$DIR/brief.md")" \
   --print-timeout 9m </dev/null > "$DIR/agy-out.txt" 2> "$DIR/agy-err.txt"
 ```
 
-`settings.json`: block every browser tool the task does not need with `permissions.deny`. On agy 1.5.9 the allow list alone does **not** confine the browser (tested 2026-11-16): `take_screenshot` and `click` ran without being listed, while a denied `mcp(chrome_devtools/click)` was refused. The sample is for a read-only task; for a task that must click or type, remove only those tools from `deny`. Replace the placeholder path:
+`settings.json`: block every browser tool the task does not need with `permissions.deny`. On agy 1.5.9 the allow list alone does **not** confine the browser (tested 2026-11-16): `take_screenshot` and `click` ran without being listed. `deny` does work: each of the five tools denied below was refused when the browser subagent called it. The sample is for a read-only task; for a task that must click or type, remove only those tools from `deny`. Replace the placeholder path:
 
 ```json
 {"toolPermission":"request-review","permissions":{"allow":[
@@ -93,12 +93,12 @@ $(cat "$DIR/brief.md")" \
 Three limits to plan around (agy 1.5.9, tested 2026-11-16):
 
 - **agy does not limit which sites the browser opens.** `execute_url(...)` and `read_url(...)` rules, allow or deny, did not stop it from opening another site. Name the sites in the brief, end it with "do not open any other site", and check the screenshot.
-- **A refused tool can end the run with no error.** When the browser subagent called `evaluate_script`, the run stopped with exit code 0, an empty stderr, and a stdout that only said it was waiting for the subagent. That is why the prompt says to read with `take_snapshot`. If stdout has no result, re-run with `--output-format json` and read `denied_actions`.
+- **A tool with no rule can end the run with no error.** With `evaluate_script` neither allowed nor denied, the browser subagent's call stopped the whole run: exit code 0, an empty stderr, and a stdout that only said it was waiting for the subagent. With it in `deny`, as above, the call came back as `Permission denied ... Matches user-configured deny rule` and the run carried on. So keep it in `deny` and keep the `take_snapshot` instruction in the prompt. If stdout has no result, re-run with `--output-format json` and read `denied_actions`.
 - **The session is recorded.** agy saves a `recording.mp4` of the browser under `~/.gemini/antigravity-cli/brain/<id>/`.
 
 Never let agy sign in, enter passwords or payment data, submit forms, post, buy, or delete. Ask the user first.
 
-Verified on agy v1.5.9 + Chrome 157, Windows 11 (2026-11-16): with the command and settings above, agy opened a public page, saved the screenshot in `$DIR` and read the text back. Typing and searching were last run on agy v1.5.3 (2026-11-09): a YouTube search completed, screenshot saved, not blocked by Claude Code auto mode.
+Verified on agy v1.5.9 + Chrome 157, Windows 11 (2026-11-16): with the command and settings above, agy opened a public page, saved the screenshot in `$DIR` and read the text back. With `fill`, `type_text` and `press_key` taken out of `deny` (the settings of example 4 in [references/examples.md](references/examples.md)), it also typed a query and pressed Enter on Wikipedia, Google Search and YouTube; each screenshot showed the query in the search box and the results page. Facebook and Instagram were not tested: Chrome was signed out of both, and agy stopped at the login page as the brief told it to.
 
 ## 3. Five Rules That Prevent Silent Failures
 
