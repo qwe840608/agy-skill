@@ -24,7 +24,7 @@ Watch clip.mp4 in the workspace. Reply in this order:
 2. Timestamped list of scene changes (mm:ss - what happens).
 3. Any on-screen text, quoted exactly.
 If you cannot open the file, say so and stop." \
-  --model gemini-3.8-flash-medium \
+  --model gemini-4-hydrogen-medium \
   --mode plan --sandbox \
   --add-dir "$DIR" \
   --settings "{\"toolPermission\":\"request-review\",\"permissions\":{\"allow\":[\"read_file($DIR)\"]}}" \
@@ -50,7 +50,7 @@ Review change.patch in the workspace as an independent reviewer.
 Report findings ranked by severity. For each: file and line, what breaks, how to fix.
 Separate 'observed in the diff' from 'inferred'. End with an 'Unverified' section.
 Do not propose rewrites of code you have not seen." \
-  --model gemini-3.8-flash-high \
+  --model gemini-4-hydrogen-medium \
   --mode plan --sandbox \
   --add-dir "$DIR" \
   --settings "{\"toolPermission\":\"request-review\",\"permissions\":{\"allow\":[\"read_file($DIR)\"]}}" \
@@ -77,7 +77,7 @@ cd "$DIR" && "$AGY" -p "Do not run any terminal commands; use only file tools.
 Read notes.md. Write a 150-200 word plain-text draft post in Traditional Chinese
 to $DIR/draft.txt. Do not invent facts that are not in notes.md.
 Then reply with the list of claims you were unsure about." \
-  --model gemini-3.8-flash-medium \
+  --model gemini-4-hydrogen-medium \
   --mode accept-edits --sandbox \
   --add-dir "$DIR" \
   --settings "{\"toolPermission\":\"request-review\",\"permissions\":{\"allow\":[\"read_file($DIR)\",\"write_file($DIR)\"]}}" \
@@ -96,9 +96,9 @@ Image variant (same flags): `"Use generate_image to create a 1024x1024 flat-styl
 
 **When**: the user wants something looked up or read on a site they are already signed in to, and the host agent has no browser of its own.
 
-**Before running**: the user (not the agent) has enabled remote debugging once at `chrome://inspect/#remote-debugging`, Chrome is open, and the user has approved this specific task.
+**Before running**: the user (not the agent) has enabled remote debugging once at `chrome://inspect/#remote-debugging`, Chrome is open, the user has approved this specific task, and the user is at the computer to click Chrome's `Allow remote debugging?` dialog if it appears.
 
-**Permissions**: only the `chrome_devtools` tools listed, only the task's domains, and `read_file`/`write_file` on `$DIR`. No `evaluate_script`, no wildcards.
+**Permissions**: `read_file`/`write_file` on `$DIR`, plus a `deny` entry for every browser tool the task does not need. On agy 1.5.9 the allow list alone did not confine the browser (tools that were not listed still ran) and no rule limited which sites it opened (tested 2026-11-16), so the site limit is written in the brief and checked on the screenshot. This task types into a search box, so `fill`, `type_text` and `press_key` stay available; `click` and `evaluate_script` are denied.
 
 `$DIR/settings.json`:
 
@@ -106,10 +106,10 @@ Image variant (same flags): `"Use generate_image to create a 1024x1024 flat-styl
 {"toolPermission":"request-review","permissions":{"allow":[
 "mcp(chrome_devtools/list_pages)","mcp(chrome_devtools/new_page)","mcp(chrome_devtools/select_page)",
 "mcp(chrome_devtools/navigate_page)","mcp(chrome_devtools/take_snapshot)","mcp(chrome_devtools/take_screenshot)",
-"mcp(chrome_devtools/click)","mcp(chrome_devtools/fill)","mcp(chrome_devtools/type_text)",
+"mcp(chrome_devtools/fill)","mcp(chrome_devtools/type_text)",
 "mcp(chrome_devtools/press_key)","mcp(chrome_devtools/wait_for)",
-"execute_url(www.example.com)","read_url(www.example.com)",
-"read_file(/absolute/path/to/workdir)","write_file(/absolute/path/to/workdir)"]}}
+"read_file(/absolute/path/to/workdir)","write_file(/absolute/path/to/workdir)"],
+"deny":["mcp(chrome_devtools/evaluate_script)","mcp(chrome_devtools/click)"]}}
 ```
 
 `$DIR/brief.md` (written by the host agent; every step is explicit):
@@ -119,15 +119,15 @@ Image variant (same flags): `"Use generate_image to create a 1024x1024 flat-styl
 2. Type "<search term>" into the search box and press Enter.
 3. Wait for results. Take a screenshot and save it as /absolute/path/to/workdir/result.png.
 4. Read back the titles of the first five results as a numbered list.
-5. Stop. Do not click any result, do not sign in, do not fill any other form.
+5. Stop. Do not click any result, do not sign in, do not fill any other form, do not open any other site.
 ```
 
 ```bash
 DIR="/absolute/path/to/workdir"
-cd "$DIR" && "$AGY" -p "/browser Do not run any terminal commands. Save screenshots under $DIR.
+cd "$DIR" && "$AGY" -p "/browser Do not run any terminal commands. Read page content with take_snapshot only; never call evaluate_script. Save screenshots under $DIR.
 
 $(cat "$DIR/brief.md")" \
-  --model gemini-3.8-flash-medium \
+  --model gemini-4-hydrogen-medium \
   --mode accept-edits --sandbox \
   --add-dir "$DIR" \
   --settings "$DIR/settings.json" \
@@ -136,6 +136,8 @@ $(cat "$DIR/brief.md")" \
 
 **Expected output**: `$DIR/result.png` and the list in `$DIR/agy-out.txt`.
 
-**Verify**: open the screenshot and compare it with the brief step by step; check the read-back list against the screenshot. Report to the user only what the screenshot confirms.
+**Verify**: open the screenshot and compare it with the brief step by step; check the read-back list against the screenshot. Report to the user only what the screenshot confirms. If `agy-out.txt` has no list and only says it is waiting for the browser subagent, a tool was refused: re-run with `--output-format json` and read `denied_actions`.
+
+**Tested**: on agy 1.5.9 + Chrome 157 (2026-11-16) the open-page, screenshot and read-back steps were re-run with the read-only settings in SKILL.md Section 2. The type-and-search step was last run on agy 1.5.3 (2026-11-09).
 
 **Stop and ask the user** before any step that would sign in, enter a password or payment detail, submit a form, post, buy, or delete. These are never delegated.

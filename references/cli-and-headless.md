@@ -129,24 +129,24 @@ When a host agent (Claude Code, OpenAI Codex, OpenCode, Pi) delegates work to `a
 ### A. Two Orchestration Modes (`Lead` vs. `Brain`)
 
 1. **`Lead` Mode (Host Directs, `agy` Executes)**:
-   - The host agent frames the assignment, delegates noisy exploration, reviews, or scoped implementation to fast `gemini-3.8-flash-medium` / `gemini-3.8-flash-high` workers, waits for completion, and verifies the result before integrating.
+   - The host agent frames the assignment, delegates noisy exploration, reviews, or scoped implementation to `agy` workers (`gemini-4-hydrogen-medium` unless the user names a model), waits for completion, and verifies the result before integrating.
    - Why it helps: the exploration tokens land in `agy`'s context instead of the host's, so the host conversation stays small. (No measured savings are claimed here; measure on your own workload.)
-2. **`Brain` Mode (`agy` Argon Proposes, Host Challenges & Verifies)**:
-   - Hand the original goal, verbatim constraints, settled decisions, and known facts to **`gemini-4-argon-medium` or `gemini-4-argon-high`** without pre-biasing the solution.
-   - Argon acts as an independent second-model reasoning lead and proposes the architectural route.
+2. **`Brain` Mode (`agy` Proposes, Host Challenges & Verifies)**:
+   - Hand the original goal, verbatim constraints, settled decisions, and known facts to **`gemini-4-hydrogen-medium`** (or the model the user names) without pre-biasing the solution.
+   - `agy` acts as an independent second-model reasoning lead and proposes the architectural route.
    - The host checks consequential assumptions against workspace evidence. If a premise fails, continue the conversation (`--conversation <id>`) with the counterexample and its source.
 
 ### B. The 5 Specialist Personas & Contracts
 
-These five "personas" are conventions of this skill, not `agy` features: they are prompt shapes and default model picks that have worked well. Shape the brief around one of them:
+These five "personas" are conventions of this skill, not `agy` features: they are prompt shapes that have worked well. Use `gemini-4-hydrogen-medium` for all of them unless the user names a model. Shape the brief around one of them:
 
-| Persona | Default Model | Contract & Prompt Guardrails |
-| :--- | :--- | :--- |
-| **`ask`** | `gemini-3.8-flash-low` | **Zero-tool synchronous Q&A & smoke test.** Answers in one call without running tools; says "not sure" rather than guessing. |
-| **`staffer`** | `gemini-3.8-flash-medium` | **General-purpose worker & native tool router.** Minimal framing; also used to invoke Antigravity-native tools like **`generate_image`** (e.g., `"Generate a 1024x1024 pixel-art mascot and save it as assets/mascot.png"`). |
-| **`researcher`** | `gemini-3.8-flash-high` | **Evidence-backed survey.** Every non-obvious claim must cite `file:line` or URL sources; observation is strictly separated from inference; ends with an explicit "Unverified / Remaining Uncertainties" section. Tracked files stay untouched. |
-| **`reviewer`** | `gemini-3.8-flash-medium` | **Independent verifier (2 flavors)**:<br>1. *Code Review*: Gather evidence via `git diff` / `gh pr view`; report severity-ranked findings with exact `file:line`, failure mode, and fix.<br>2. *Plan/Design Review*: Multi-angle challenge of assumptions, edge cases, and failure modes. Tracked files stay untouched. |
-| **`implementer`** | `gemini-3.8-flash-high` | **Scoped code change + verification.** Produces a minimal diff matching codebase conventions and runs tests/typecheck before finishing. Leaves changes uncommitted in the working tree unless Git delivery is explicitly requested. |
+| Persona | Contract & Prompt Guardrails |
+| :--- | :--- |
+| **`ask`** | **Zero-tool synchronous Q&A & smoke test.** Answers in one call without running tools; says "not sure" rather than guessing. |
+| **`staffer`** | **General-purpose worker & native tool router.** Minimal framing; also used to invoke Antigravity-native tools like **`generate_image`** (e.g., `"Generate a 1024x1024 pixel-art mascot and save it as assets/mascot.png"`). |
+| **`researcher`** | **Evidence-backed survey.** Every non-obvious claim must cite `file:line` or URL sources; observation is strictly separated from inference; ends with an explicit "Unverified / Remaining Uncertainties" section. Tracked files stay untouched. |
+| **`reviewer`** | **Independent verifier (2 flavors)**:<br>1. *Code Review*: Gather evidence via `git diff` / `gh pr view`; report severity-ranked findings with exact `file:line`, failure mode, and fix.<br>2. *Plan/Design Review*: Multi-angle challenge of assumptions, edge cases, and failure modes. Tracked files stay untouched. |
+| **`implementer`** | **Scoped code change + verification.** Produces a minimal diff matching codebase conventions and runs tests/typecheck before finishing. Leaves changes uncommitted in the working tree unless Git delivery is explicitly requested. |
 
 ### C. Writing High-Signal Briefs & Avoiding the 200KB Arg Limit
 
@@ -193,7 +193,13 @@ These five "personas" are conventions of this skill, not `agy` features: they ar
 - `/browser` invokes the built-in `browser` subagent, which mounts the `chrome_devtools` MCP (`list_pages`, `new_page`, `navigate_page`, `take_snapshot`, `take_screenshot` with `filePath`, `click`, `fill`, `type_text`, `press_key`, `wait_for`, `evaluate_script`, ...).
 - agy starts `chrome-devtools-mcp` with `--autoConnect`, which reads `DevToolsActivePort` from Chrome's default `User Data` folder, so it attaches to the user's running Chrome and its signed-in profile.
 - Prerequisite (user action): enable remote debugging at `chrome://inspect/#remote-debugging`. Without it the run fails with a missing `DevToolsActivePort` error.
-- Use the allowlist in SKILL.md Section 2. Do not allow `evaluate_script` or `mcp(chrome_devtools/*)` unless the task needs it.
+- Use the settings in SKILL.md Section 2. Do not allow `evaluate_script` or `mcp(chrome_devtools/*)` unless the task needs it.
+- **`permissions.allow` does not confine the browser subagent (agy 1.5.9 + Chrome 157, Windows 11, tested 2026-11-16)**: with an allow list that left them out, `take_screenshot` and `click` still ran, and a page on a domain with no `execute_url`/`read_url` rule opened. This fits the agy 1.5.8 changelog, which says the browser tools now follow `mcp(server/tool)` deny or ask rules.
+- **`permissions.deny` works for tools, not for sites**: with `mcp(chrome_devtools/click)` denied, the click was refused and the subagent reported it and stopped. `execute_url(...)` and `read_url(...)` deny rules for a domain did not stop the browser from opening it, so there is no tested way to limit which sites the browser opens. Only `click` was tested as a denied tool.
+- **A refused `evaluate_script` ends the run silently**: with no rule for it, the subagent's call was refused and the whole run stopped with exit code 0, an empty stderr, and a stdout that only said it was waiting for the subagent (all three runs without the instruction below stopped this way). With `--output-format json`, used in one of them, the result has `"status":"SUCCESS"` and lists the tool under `denied_actions` (`McpChromeDevtoolsEvaluateScript`). Adding "Read page content with take_snapshot only; never call evaluate_script" to the prompt avoided the call.
+- **Chrome may ask the user to approve the connection**: an `Allow remote debugging?` dialog. In two runs where nobody clicked it, agy gave up after 3 to 4.5 minutes with exit code 0 and an empty stderr; stdout carried agy's own explanation.
+- **Recording**: agy 1.5.9 saves a `recording.mp4` of each browser session under `~/.gemini/antigravity-cli/brain/<session id>/`.
+- These browser results come from one machine whose global agy permission preset was Turbo; each run set `toolPermission` to `request-review` through `--settings`. They were not repeated on a machine with stricter global settings.
 - Edge and isolated profiles would need global `chrome-devtools-mcp` config changes; not supported by this skill.
 
 ### 6. Native Stream-JSON Diagnostics (`finished_reason` & `AGY_ERROR`)

@@ -35,14 +35,14 @@ PowerShell: the same flags work, but close stdin with `cmd /c "agy ... < NUL"` i
 
 ## 1. The Standard Command
 
-Put every input file in one working folder `$DIR` (absolute path; on Windows use forward slashes, e.g. `C:/work/job1`). Default model: `gemini-3.8-flash-medium`; for recognizing images and video use `gemini-4-hydrogen-medium` instead (swap it into the `--model` flag of the examples below). Run `"$AGY" models` for the current list.
+Put every input file in one working folder `$DIR` (absolute path; on Windows use forward slashes, e.g. `C:/work/job1`). Default model for every task: `gemini-4-hydrogen-medium`. Use another model only when the user names one (swap it into the `--model` flag of the examples below). Run `"$AGY" models` for the current list.
 
 **Read-only** (look at files, answer in stdout):
 
 ```bash
 DIR="/absolute/path/to/workdir"
 cd "$DIR" && "$AGY" -p "Do not run any terminal commands; only use your file-viewing tools. <task>" \
-  --model gemini-3.8-flash-medium \
+  --model gemini-4-hydrogen-medium \
   --mode plan --sandbox \
   --add-dir "$DIR" \
   --settings "{\"toolPermission\":\"request-review\",\"permissions\":{\"allow\":[\"read_file($DIR)\"]}}" \
@@ -61,35 +61,44 @@ Verified on agy v1.5.9, Windows 11, Claude Code auto mode (2026-11-16): both for
 
 One-time setup by the user (not the agent): open Chrome, go to `chrome://inspect/#remote-debugging`, turn on remote debugging. Check it is on: a `DevToolsActivePort` file exists in Chrome's user-data folder (Windows: `$LOCALAPPDATA/Google/Chrome/User Data/`; macOS: `~/Library/Application Support/Google/Chrome/`; Linux: `~/.config/google-chrome/`).
 
+The user must be at the computer: Chrome can show an `Allow remote debugging?` dialog when agy connects, and only the user clicks it. In two runs on agy 1.5.9 where nobody did (2026-11-16), agy gave up after 3 to 4.5 minutes with exit code 0 and an empty stderr.
+
 Workflow: the host agent writes a step list (URL, what to click/type, what to read back, where to stop) into `$DIR/brief.md`, runs agy, then verifies the screenshot and report itself before telling the user.
 
 ```bash
 DIR="/absolute/path/to/workdir"   # contains brief.md and settings.json
-cd "$DIR" && "$AGY" -p "/browser Do not run any terminal commands. Save screenshots under $DIR.
+cd "$DIR" && "$AGY" -p "/browser Do not run any terminal commands. Read page content with take_snapshot only; never call evaluate_script. Save screenshots under $DIR.
 
 $(cat "$DIR/brief.md")" \
-  --model gemini-3.8-flash-medium \
+  --model gemini-4-hydrogen-medium \
   --mode accept-edits --sandbox \
   --add-dir "$DIR" \
   --settings "$DIR/settings.json" \
   --print-timeout 9m </dev/null > "$DIR/agy-out.txt" 2> "$DIR/agy-err.txt"
 ```
 
-`settings.json`: allow only the needed tools and the task's domains (no `evaluate_script`, no wildcards). Replace the placeholder domain and path:
+`settings.json`: block every browser tool the task does not need with `permissions.deny`. On agy 1.5.9 the allow list alone does **not** confine the browser (tested 2026-11-16): `take_screenshot` and `click` ran without being listed, while a denied `mcp(chrome_devtools/click)` was refused. The sample is for a read-only task; for a task that must click or type, remove only those tools from `deny`. Replace the placeholder path:
 
 ```json
 {"toolPermission":"request-review","permissions":{"allow":[
 "mcp(chrome_devtools/list_pages)","mcp(chrome_devtools/new_page)","mcp(chrome_devtools/select_page)",
 "mcp(chrome_devtools/navigate_page)","mcp(chrome_devtools/take_snapshot)","mcp(chrome_devtools/take_screenshot)",
-"mcp(chrome_devtools/click)","mcp(chrome_devtools/fill)","mcp(chrome_devtools/type_text)",
-"mcp(chrome_devtools/press_key)","mcp(chrome_devtools/wait_for)",
-"execute_url(www.example.com)","read_url(www.example.com)",
-"read_file(/absolute/path/to/workdir)","write_file(/absolute/path/to/workdir)"]}}
+"mcp(chrome_devtools/wait_for)",
+"read_file(/absolute/path/to/workdir)","write_file(/absolute/path/to/workdir)"],
+"deny":[
+"mcp(chrome_devtools/evaluate_script)","mcp(chrome_devtools/click)","mcp(chrome_devtools/fill)",
+"mcp(chrome_devtools/type_text)","mcp(chrome_devtools/press_key)"]}}
 ```
+
+Three limits to plan around (agy 1.5.9, tested 2026-11-16):
+
+- **agy does not limit which sites the browser opens.** `execute_url(...)` and `read_url(...)` rules, allow or deny, did not stop it from opening another site. Name the sites in the brief, end it with "do not open any other site", and check the screenshot.
+- **A refused tool can end the run with no error.** When the browser subagent called `evaluate_script`, the run stopped with exit code 0, an empty stderr, and a stdout that only said it was waiting for the subagent. That is why the prompt says to read with `take_snapshot`. If stdout has no result, re-run with `--output-format json` and read `denied_actions`.
+- **The session is recorded.** agy saves a `recording.mp4` of the browser under `~/.gemini/antigravity-cli/brain/<id>/`.
 
 Never let agy sign in, enter passwords or payment data, submit forms, post, buy, or delete. Ask the user first.
 
-Verified on agy v1.5.3 + Chrome 157, Windows 11 (2026-11-09): a YouTube search task completed, screenshot saved, not blocked by Claude Code auto mode.
+Verified on agy v1.5.9 + Chrome 157, Windows 11 (2026-11-16): with the command and settings above, agy opened a public page, saved the screenshot in `$DIR` and read the text back. Typing and searching were last run on agy v1.5.3 (2026-11-09): a YouTube search completed, screenshot saved, not blocked by Claude Code auto mode.
 
 ## 3. Five Rules That Prevent Silent Failures
 

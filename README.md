@@ -69,7 +69,7 @@ Or paste this to your agent: *"Run `npx --yes agy-skill`, then `npx --yes agy-sk
 You do not call `agy` yourself. You ask your agent as usual, for example *"Have Gemini summarize this video"* or *"Ask Gemini for a second opinion on this plan"*, and the agent:
 
 1. Puts the input files in one working folder and writes a short brief.
-2. Runs `agy` with permissions limited to that folder (and, for Chrome tasks, only the named browser tools and websites).
+2. Runs `agy` with permissions limited to that folder (for Chrome tasks, with the browser tools the task does not need blocked).
 3. Reads `agy`'s error output and the produced files itself, checks the facts, and only then reports back to you.
 
 Four ready-made examples with the exact prompts: [references/examples.md](references/examples.md).
@@ -82,11 +82,13 @@ Four ready-made examples with the exact prompts: [references/examples.md](refere
 | :--- | :--- | :--- | :--- |
 | Read-only (summaries, reviews) | read files in the working folder | write anything, run shell commands, read outside that folder | — |
 | Writes files (drafts, images) | read and write in the working folder | write anywhere else, run shell commands | sending the result anywhere outside your machine |
-| Browser (`/browser` in your Chrome) | use the listed browser tools on the named websites | run page scripts, use wildcards, touch other sites | signing in, entering passwords or payment details, submitting forms, posting, buying, deleting |
+| Browser (`/browser` in your Chrome) | open pages, read them and take screenshots; click or type only when the task needs it | run page scripts, or use a browser tool the task has blocked | signing in, entering passwords or payment details, submitting forms, posting, buying, deleting |
 
 In every case: no `--dangerously-skip-permissions`, permissions come from an explicit allowlist, and exit code 0 is never taken as proof of success. The allowlist is enforced by `agy`; the "ask you first" line is enforced by your agent following these instructions. Full technical detail is in [SKILL.md](SKILL.md).
 
 Two gaps measured on agy 1.5.9 (Windows 11, 2026-11-16): besides the working folder, `agy` could read (and, in a writing task, write) files in the folder the command was started from and under the system temp folder, although neither was on the allowlist. The skill therefore tells the agent to start `agy` from inside the working folder; do not keep anything sensitive in the temp folder while a task runs. Reads and writes in the other folders we tried were blocked as the table says.
+
+Browser tasks, measured on agy 1.5.9 + Chrome 157 (Windows 11, 2026-11-16): `agy` does not limit which websites the browser opens, so "stay on this site" is an instruction your agent writes into the task and checks on the screenshot, not something `agy` enforces. Blocking a tool (we tested clicking) did work. Chrome may ask you to click **Allow** when `agy` connects, so a browser task needs you at the computer, and `agy` keeps a screen recording of the session under `~/.gemini/antigravity-cli/brain/`.
 
 ---
 
@@ -94,7 +96,7 @@ Two gaps measured on agy 1.5.9 (Windows 11, 2026-11-16): besides the working fol
 
 | | Install / doctor / uninstall | Read-only task | Writes files | Chrome task |
 | :--- | :--- | :--- | :--- | :--- |
-| **Claude Code, Windows 11** | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-09, agy 1.5.3, Chrome 157 |
+| **Claude Code, Windows 11** | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9 | ✅ 2026-11-16, agy 1.5.9, Chrome 157 (open a page, screenshot, read back); typing into a page last run 2026-11-09, agy 1.5.3 |
 | **Antigravity / Codex / OpenCode, Windows 11** | ✅ install only, 2026-11-09 | untested | untested | untested |
 | **macOS, Linux (any agent)** | 🤖 CI installer tests only | untested | untested | untested |
 

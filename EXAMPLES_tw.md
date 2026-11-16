@@ -26,7 +26,7 @@ Watch clip.mp4 in the workspace. Reply in this order:
 2. Timestamped list of scene changes (mm:ss - what happens).
 3. Any on-screen text, quoted exactly.
 If you cannot open the file, say so and stop." \
-  --model gemini-3.8-flash-medium \
+  --model gemini-4-hydrogen-medium \
   --mode plan --sandbox \
   --add-dir "$DIR" \
   --settings "{\"toolPermission\":\"request-review\",\"permissions\":{\"allow\":[\"read_file($DIR)\"]}}" \
@@ -52,7 +52,7 @@ Review change.patch in the workspace as an independent reviewer.
 Report findings ranked by severity. For each: file and line, what breaks, how to fix.
 Separate 'observed in the diff' from 'inferred'. End with an 'Unverified' section.
 Do not propose rewrites of code you have not seen." \
-  --model gemini-3.8-flash-high \
+  --model gemini-4-hydrogen-medium \
   --mode plan --sandbox \
   --add-dir "$DIR" \
   --settings "{\"toolPermission\":\"request-review\",\"permissions\":{\"allow\":[\"read_file($DIR)\"]}}" \
@@ -79,7 +79,7 @@ cd "$DIR" && "$AGY" -p "Do not run any terminal commands; use only file tools.
 Read notes.md. Write a 150-200 word plain-text draft post in Traditional Chinese
 to $DIR/draft.txt. Do not invent facts that are not in notes.md.
 Then reply with the list of claims you were unsure about." \
-  --model gemini-3.8-flash-medium \
+  --model gemini-4-hydrogen-medium \
   --mode accept-edits --sandbox \
   --add-dir "$DIR" \
   --settings "{\"toolPermission\":\"request-review\",\"permissions\":{\"allow\":[\"read_file($DIR)\",\"write_file($DIR)\"]}}" \
@@ -98,9 +98,9 @@ Then reply with the list of claims you were unsure about." \
 
 **適用**：使用者要在已登入的網站上查或讀某些東西，而 host agent 沒有自己的瀏覽器。
 
-**執行前**：使用者（不是 agent）已在 `chrome://inspect/#remote-debugging` 開過一次遠端偵錯、Chrome 正在執行、而且使用者已同意這個具體任務。
+**執行前**：使用者（不是 agent）已在 `chrome://inspect/#remote-debugging` 開過一次遠端偵錯、Chrome 正在執行、使用者已同意這個具體任務，而且人在電腦前，Chrome 跳出「Allow remote debugging?」時可以按。
 
-**權限**：只開列出的 `chrome_devtools` 工具、只開任務的網域，加上 `$DIR` 的 `read_file`／`write_file`。不開 `evaluate_script`，不用萬用字元。
+**權限**：`$DIR` 的 `read_file`／`write_file`，再加上 `deny` 清單，把任務用不到的瀏覽器工具都擋掉。在 agy 1.5.9 上，光靠允許清單擋不住瀏覽器（沒列出的工具照樣能用），也沒有任何規則能限制它開哪些網站（2026-11-16 實測），所以「只能開哪個網站」要寫在任務簡報裡，再用截圖核對。這個任務要在搜尋框打字，所以 `fill`、`type_text`、`press_key` 保留；`click` 和 `evaluate_script` 擋掉。
 
 `$DIR/settings.json`：
 
@@ -108,10 +108,10 @@ Then reply with the list of claims you were unsure about." \
 {"toolPermission":"request-review","permissions":{"allow":[
 "mcp(chrome_devtools/list_pages)","mcp(chrome_devtools/new_page)","mcp(chrome_devtools/select_page)",
 "mcp(chrome_devtools/navigate_page)","mcp(chrome_devtools/take_snapshot)","mcp(chrome_devtools/take_screenshot)",
-"mcp(chrome_devtools/click)","mcp(chrome_devtools/fill)","mcp(chrome_devtools/type_text)",
+"mcp(chrome_devtools/fill)","mcp(chrome_devtools/type_text)",
 "mcp(chrome_devtools/press_key)","mcp(chrome_devtools/wait_for)",
-"execute_url(www.example.com)","read_url(www.example.com)",
-"read_file(/absolute/path/to/workdir)","write_file(/absolute/path/to/workdir)"]}}
+"read_file(/absolute/path/to/workdir)","write_file(/absolute/path/to/workdir)"],
+"deny":["mcp(chrome_devtools/evaluate_script)","mcp(chrome_devtools/click)"]}}
 ```
 
 `$DIR/brief.md`（由 host agent 撰寫，每一步都明確）：
@@ -121,15 +121,15 @@ Then reply with the list of claims you were unsure about." \
 2. Type "<search term>" into the search box and press Enter.
 3. Wait for results. Take a screenshot and save it as /absolute/path/to/workdir/result.png.
 4. Read back the titles of the first five results as a numbered list.
-5. Stop. Do not click any result, do not sign in, do not fill any other form.
+5. Stop. Do not click any result, do not sign in, do not fill any other form, do not open any other site.
 ```
 
 ```bash
 DIR="/absolute/path/to/workdir"
-cd "$DIR" && "$AGY" -p "/browser Do not run any terminal commands. Save screenshots under $DIR.
+cd "$DIR" && "$AGY" -p "/browser Do not run any terminal commands. Read page content with take_snapshot only; never call evaluate_script. Save screenshots under $DIR.
 
 $(cat "$DIR/brief.md")" \
-  --model gemini-3.8-flash-medium \
+  --model gemini-4-hydrogen-medium \
   --mode accept-edits --sandbox \
   --add-dir "$DIR" \
   --settings "$DIR/settings.json" \
@@ -138,6 +138,8 @@ $(cat "$DIR/brief.md")" \
 
 **預期產出**：`$DIR/result.png` 與 `$DIR/agy-out.txt` 裡的清單。
 
-**驗證**：打開截圖，逐步對照簡報；把讀回的清單和截圖比對。只回報截圖能證實的內容。
+**驗證**：打開截圖，逐步對照簡報；把讀回的清單和截圖比對。只回報截圖能證實的內容。如果 `agy-out.txt` 裡沒有清單、只寫著在等瀏覽器子代理，表示有工具被拒絕：加上 `--output-format json` 重跑，看 `denied_actions`。
+
+**實測範圍**：在 agy 1.5.9 + Chrome 157（2026-11-16）用 SKILL.md 第 2 節的唯讀設定重跑過「開頁面、截圖、讀回內容」這幾步。「打字搜尋」這一步最後一次實測是 agy 1.5.3（2026-11-09）。
 
 **遇到以下任何一步，先停下來問使用者**：登入、輸入密碼或付款資料、送出表單、發文、購買、刪除。這些永遠不派給 agy。
